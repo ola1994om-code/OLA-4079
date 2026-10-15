@@ -1,0 +1,1951 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أبو حسام - لوحة الإدارة (إدارة الزجاج)</title>
+    <style>
+        :root { --primary: #1e3a8a; --secondary: #3b82f6; --bg: #f3f4f6; --text: #1f2937; --hr-color: #6366f1;}
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; }
+        
+        /* شاشة تسجيل الدخول */
+        #login-screen { display: flex; justify-content: center; align-items: center; height: 100vh; background: var(--primary); }
+        .login-box { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        .login-box h2 { color: var(--primary); margin-top: 0; }
+        .login-box input { margin-bottom: 1rem; font-size: 1.1rem; }
+        
+        header { background-color: var(--primary); color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; font-size: 1.2rem; font-weight: bold; position: relative; z-index: 10;}
+        .header-actions { display: flex; gap: 10px; align-items: center; font-size: 0.9rem; font-weight: normal; }
+        .btn-logout { background: #ef4444; color: white; border: none; padding: 5px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; width: auto; margin: 0;}
+        
+        .container { max-width: 1200px; margin: 1rem auto; padding: 0 1rem; }
+        
+        .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .tab { padding: 0.5rem 1rem; background: #e5e7eb; cursor: pointer; border-radius: 4px; flex: 1; text-align: center; font-weight: bold; min-width: 100px; transition: 0.2s;}
+        .tab.active { background: var(--primary); color: white; }
+        .tab.hr-btn.active { background: var(--hr-color); color: white; }
+        .tab.my-btn.active { background: #059669; color: white; }
+        .tab.browser-btn.active { background: #8b5cf6; color: white; }
+        
+        .card { background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1rem; }
+        .flex-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1rem; align-items: flex-start; }
+        .flex-row > div { flex: 1 1 100%; } 
+        @media (min-width: 768px) { .flex-row > div { flex: 1; } } 
+        
+        label { display: block; margin-bottom: 0.5rem; font-weight: bold; font-size: 0.9rem;}
+        input, select, button { width: 100%; padding: 0.6rem; border: 1px solid #d1d5db; border-radius: 4px; box-sizing: border-box; font-family: inherit;}
+        button { background-color: var(--secondary); color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 0.5rem; transition: 0.2s;}
+        button:hover { background-color: var(--primary); }
+        .hidden { display: none !important; }
+        
+        /* --- تمييز رقم الطلب --- */
+        .badge-order-id {
+            background: #ef4444 !important;
+            color: white !important;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-weight: 900;
+            font-size: 1.4rem;
+            display: inline-block;
+            direction: ltr;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            border: 2px solid #b91c1c;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .totals-box { background: #dbeafe; border: 1px solid #bfdbfe; padding: 15px; border-radius: 5px; margin-top: 15px; display: flex; justify-content: space-around; flex-wrap: wrap; gap: 10px; font-size: 1.1rem; font-weight: bold; color: #1e40af;}
+        .totals-box div { background: #fff; padding: 5px 15px; border-radius: 5px; border: 1px solid #93c5fd; }
+        .piece-list-item { background: white; border: 1px solid #e5e7eb; padding: 10px; margin-bottom: 5px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;}
+        
+        .checkbox-group { display: flex; gap: 15px; flex-wrap: wrap; background: #fff; padding: 10px; border: 1px solid #d1d5db; border-radius: 4px; }
+        .checkbox-group label { display: flex; align-items: center; gap: 5px; font-weight: bold; margin: 0; cursor: pointer; background: #f3f4f6; padding: 8px 12px; border-radius: 5px;}
+        .checkbox-group input { width: auto; margin: 0; }
+
+        /* نوافذ الملحقات العادية وتقرير الإنتاج */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 10px; box-sizing: border-box; }
+        .modal-content { background: #fff; padding: 15px; border-radius: 8px; width: 100%; max-width: 900px; max-height: 95vh; overflow-y: auto; text-align: center; position: relative;}
+        .close-btn { position: sticky; top: 0; background: #ef4444; color: white; border: none; padding: 10px; width: 100%; font-size: 1.1rem; font-weight: bold; cursor: pointer; z-index: 10; margin-bottom: 15px; border-radius: 5px;}
+        
+        /* 🌟 شاشة المعاينة الثابتة */
+        #fixed-preview-modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #cbd5e1; z-index: 9999; flex-direction: column; overflow: hidden; }
+        .preview-top-bar { background: #1e3a8a; width: 100%; flex-shrink: 0; padding: 10px; box-sizing: border-box; box-shadow: 0 2px 5px rgba(0,0,0,0.3); z-index: 10; }
+        .btn-print-preview, .btn-close-preview { color: white; border: none; padding: 8px 15px; font-size: 1rem; border-radius: 4px; font-weight: bold; cursor: pointer; margin: 0; flex:1; }
+        .btn-print-preview { background: #059669; }
+        .btn-close-preview { background: #ef4444; }
+        .top-bar-nav { display: flex; justify-content: space-between; align-items: center; background: #1e40af; padding: 6px 10px; border-radius: 4px; gap: 5px; }
+        .top-bar-nav button { background: #3b82f6; color: white; border: none; padding: 6px 10px; font-size: 0.95rem; border-radius: 4px; font-weight: bold; cursor: pointer; flex: 1; margin: 0;}
+        .top-bar-nav button:disabled { background: #9ca3af; cursor: not-allowed;}
+        .top-bar-nav span { color: white; font-weight: bold; font-size: 0.95rem; text-align: center; flex: 1.5; white-space: pre-line;}
+        .preview-body-container { flex: 1; position: relative; overflow: hidden; width: 100%; }
+        #preview-scale-wrapper { background: white; border-radius: 8px; width: 450px; padding: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); box-sizing: border-box; display: flex; flex-direction: column; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transform-origin: center center; }
+
+        .emp-card { border: 1px solid #e5e7eb; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; gap: 15px; background: #fff; align-items: center;}
+        .btn-print { background:#4b5563; color:white; border:none; padding:8px 20px; border-radius:5px; font-weight:bold; cursor:pointer; font-size:1rem; width:auto; margin:0; margin-left: 5px;}
+        
+        .admin-order-card { background:#fff; border:2px solid #1e3a8a; border-radius:8px; margin-bottom:20px; box-shadow:0 2px 5px rgba(0,0,0,0.1); overflow:hidden; }
+        .order-header { padding:12px 15px; border-bottom: 1px solid #e5e7eb; }
+        .order-glass-spec { background:#fef3c7; border:1px solid #f59e0b; padding:10px; border-radius:5px; margin: 10px 15px; color:#b45309; font-weight:bold; font-size:1.05rem;}
+        
+        .piece-card { border: 1px solid #d1d5db; border-radius: 6px; margin: 0 15px 15px 15px; padding: 12px; background: #f9fafb; display: flex; flex-direction: column; gap: 10px; }
+        .piece-card.piece-done { background: #f0fdf4; border-color: #a7f3d0; }
+        .piece-card.piece-broken { background: #fef2f2; border-color: #fca5a5; }
+        .piece-header { display: flex; justify-content: space-between; border-bottom: 1px dashed #d1d5db; padding-bottom: 8px; align-items: center; }
+        .piece-number { background: #dc2626; color: white; padding: 4px 10px; border-radius: 4px; font-weight: bold; }
+        .piece-dims { font-size: 1.2rem; font-weight: bold; color: #1f2937; direction: ltr; white-space: nowrap; }
+        .piece-qty { font-size: 1.3rem; font-weight: bold; color: #dc2626; direction: ltr; background: #fee2e2; padding: 2px 8px; border-radius: 4px;}
+        .piece-details { font-size: 0.95rem; color: #4b5563; }
+        
+        .stages-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; padding-top: 10px; border-top: 1px dashed #d1d5db; }
+        .stage-badge { flex: 1 1 calc(50% - 8px); text-align: center; padding: 10px 5px; border-radius: 6px; font-size: 1rem; font-weight: bold; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 5px;}
+        .stage-pending { background: #f3f4f6; color: #4b5563; border: 1px solid #d1d5db; }
+        .stage-done { background: #d1fae5; color: #065f46; border: 1px solid #10b981; }
+        .stage-clickable { cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .stage-clickable:active { transform: scale(0.98); }
+        
+        .order-footer { background:#e0f2fe; padding:12px; text-align:center; font-weight:bold; font-size:1.1rem; color:#1e3a8a; border-top:2px solid #bae6fd;}
+        .creator-badge { background: #818cf8; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.85rem; margin-right: 10px;}
+
+        /* --- تنسيقات الفاتورة الاحترافية --- */
+        #print-area { display: none; }
+        .a4-page { background: white; width: 21cm; min-height: 29.7cm; margin: 0 auto 20px auto; padding: 1.5cm; box-shadow: 0 5px 15px rgba(0,0,0,0.3); box-sizing: border-box; direction: rtl; font-family: 'Segoe UI', Tahoma, Arial, sans-serif; position: relative; page-break-after: always; }
+        .invoice-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #1e3a8a; padding-bottom: 15px; margin-bottom: 20px; }
+        .invoice-company-info { text-align: right; color: #1f2937; flex: 2;}
+        .invoice-company-info h1 { margin: 0 0 5px 0; color: #1e3a8a; font-size: 1.8rem; font-weight: 900;}
+        .invoice-company-info p { margin: 3px 0; font-size: 1.1rem; font-weight: bold; color: #4b5563;}
+        .invoice-logo-container { text-align: left; flex: 1; }
+        .invoice-logo-img { max-height: 100px; max-width: 100%; object-fit: contain; }
+        .invoice-title { text-align: center; margin-bottom: 25px; }
+        .invoice-title h2 { background: #1e3a8a; color: white; display: inline-block; padding: 8px 30px; border-radius: 6px; margin: 0; font-size: 1.6rem; letter-spacing: 1px; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
+        .invoice-meta { display: flex; justify-content: space-between; background: #f8fafc; border: 1px solid #cbd5e1; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
+        .invoice-meta div { flex: 1; text-align: center; border-left: 1px solid #cbd5e1; }
+        .invoice-meta div:last-child { border-left: none; }
+        .invoice-meta-title { font-size: 1rem; color: #64748b; margin-bottom: 5px; font-weight: bold;}
+        .invoice-meta-value { font-size: 1.2rem; font-weight: bold; color: #0f172a; }
+        .invoice-spec { background: #fefce8; border-right: 5px solid #f59e0b; padding: 15px; margin-bottom: 20px; font-size: 1.15rem; font-weight: bold; color: #854d0e; border-radius: 4px;}
+        .invoice-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 1.15rem; }
+        .invoice-table th, .invoice-table td { border: 1px solid #cbd5e1; padding: 12px 8px; text-align: center; }
+        .invoice-table th { background-color: #1e3a8a !important; color: white !important; font-weight: bold; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
+        .invoice-table tr:nth-child(even) { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
+
+        .labels-page { background: white; width: 21cm; min-height: 29.7cm; margin: 0 auto 20px auto; padding: 1.5cm; box-shadow: 0 5px 15px rgba(0,0,0,0.3); box-sizing: border-box; direction: rtl; font-family: Arial, sans-serif; page-break-after: always; }
+        .labels-container { display: flex; flex-wrap: wrap; gap: 15px; justify-content: flex-start;}
+        
+        @media print {
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area { display: block; position: absolute; left: 0; top: 0; width: 100%; background: none; padding: 0; margin:0; }
+            .a4-page, .labels-page { box-shadow: none !important; margin: 0 !important; padding: 10px !important; width: 100% !important; min-height: auto; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <div class="login-box">
+            <h2>تسجيل الدخول للنظام</h2>
+            <p style="color:#4b5563; font-size:0.9rem; margin-bottom:1.5rem;">يرجى إدخال بيانات حسابك للمتابعة</p>
+            <input type="text" id="login-name" placeholder="اسم المستخدم">
+            <input type="password" id="login-pass" placeholder="كلمة المرور">
+            <button onclick="login()" style="font-size:1.1rem; padding:10px;">تسجيل الدخول 🔐</button>
+        </div>
+    </div>
+
+    <div id="main-app" class="hidden">
+        <header>
+            <div>أبو حسام للخدمات الإلكترونية - إدارة الزجاج</div>
+            <div class="header-actions">
+                <span id="user-welcome"></span>
+                <button class="btn-logout" onclick="logout()">خروج</button>
+            </div>
+        </header>
+        
+        <div class="container">
+            <div class="tabs" id="admin-layout">
+                <div class="tab my-btn active" onclick="showSection('my-orders', this)">طلباتي وملفي 👤</div>
+                <div class="tab" onclick="showSection('customers', this)">الزبائن وملفاتهم 👥</div>
+                <div class="tab" onclick="showSection('orders', this)">إنشاء طلبية 📝</div>
+                <div class="tab" onclick="showSection('production', this)">قيد الإنتاج ⚙️</div>
+                <div class="tab browser-btn" onclick="showSection('order-browser', this)" style="background:#8b5cf6; color:white;">متصفح الطلبات 🔍</div>
+                <div class="tab" onclick="showSection('completed', this)" style="background:#4b5563; color:white;">الأرشيف ✔️</div>
+                <div class="tab hr-btn" onclick="showSection('hr-workers', this)" id="tab-hr">الإعدادات والعمال 👷</div>
+            </div>
+
+            <!-- 0. طلباتي -->
+            <div id="my-orders" class="card admin-section">
+                <h3 style="color: #059669;">سجل الطلبات التي قمت بتنظيمها</h3>
+                <div id="my-orders-container"></div>
+            </div>
+
+            <!-- 1. الزبائن وملفاتهم -->
+            <div id="customers" class="card admin-section hidden">
+                <h3 style="color: var(--primary);">إضافة زبون جديد</h3>
+                <div class="flex-row">
+                    <div><input type="text" id="cust-name" placeholder="اسم الزبون (ضروري)"></div>
+                    <div><input type="text" id="cust-phone" placeholder="رقم الهاتف"></div>
+                    <div><input type="text" id="cust-address" placeholder="العنوان (ضروري)"></div>
+                    <div><button onclick="addCustomer()">حفظ الزبون</button></div>
+                </div>
+                
+                <hr style="border:1px solid #e5e7eb; margin: 20px 0;">
+                
+                <h3 style="color: var(--primary);">ملف الزبون (متابعة الطلبات والتسليم)</h3>
+                <div class="flex-row" style="background: #f0fdf4; padding: 15px; border-radius: 5px; border: 1px solid #a7f3d0;">
+                    <div style="flex: 2;">
+                        <input type="text" id="search-profile-cust" placeholder="🔍 ابحث عن زبون بالاسم أو الرقم..." onkeyup="filterProfileCustomer()" style="margin-bottom: 5px; border: 1px solid #10b981;">
+                        <select id="select-customer-profile" onchange="renderCustomerProfile()"></select>
+                    </div>
+                </div>
+                <div id="customer-profile-details"></div>
+            </div>
+
+            <!-- 2. إنشاء الطلبات -->
+            <div id="orders" class="card admin-section hidden">
+                <h3 id="create-order-title">تفصيل الطلبية و إرسالها للورشة</h3>
+                <div class="flex-row">
+                    <div>
+                        <label>الزبون</label>
+                        <input type="text" id="search-order-cust" placeholder="🔍 ابحث عن زبون بالاسم أو الرقم..." onkeyup="filterOrderCustomer()" style="margin-bottom: 5px; border: 1px solid #3b82f6; background-color: #eff6ff;">
+                        <select id="order-customer"></select>
+                    </div>
+                    <div>
+                        <label>رقم الطلب</label>
+                        <input type="text" id="order-id" readonly class="badge-order-id" style="width:100%; box-sizing:border-box; text-align:center; background-color:#ef4444; color:white;">
+                    </div>
+                    <div><label>تاريخ الطلب</label><input type="text" id="order-date" readonly style="background-color: #e5e7eb; cursor: not-allowed; text-align: center; font-weight: bold; color: var(--primary); direction: ltr;"></div>
+                    <div style="flex:2;"><label>إرفاق مخططات</label><input type="file" id="order-images-input" accept="image/*" multiple onchange="handleTempImages(this)"></div>
+                </div>
+                <div id="temp-images-preview" style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;"></div>
+
+                <div style="background: #e0f2fe; padding: 15px; border-radius: 5px; border: 2px solid #bae6fd; margin-bottom:15px;">
+                    <h4 style="margin-top:0; color:#0284c7;">1. مواصفات زجاج الطلبية (تطبق على كامل الطلب)</h4>
+                    
+                    <div class="flex-row">
+                        <div>
+                            <label>هيكل القطعة</label>
+                            <select id="p-structure" onchange="toggleOrderStructure()">
+                                <option value="مفرد">زجاج مفرد</option>
+                                <option value="دبل فتراج">دبل فتراج</option>
+                                <option value="تربلكس">تربلكس</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="background:#fff; padding:12px; border-radius:5px; margin-bottom:10px; border:1px solid #7dd3fc;">
+                        <h5 style="margin:0 0 10px 0; color:#0369a1;" id="title-layer1">مواصفات الزجاج (الطبقة الأساسية)</h5>
+                        <div class="flex-row">
+                            <div>
+                                <label>نوع الزجاج</label>
+                                <select id="p-type1">
+                                    <option value="عادي">عادي</option>
+                                    <option value="سيكوريت">سيكوريت</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>لون الزجاج</label>
+                                <input type="text" id="p-color1" placeholder="اكتب لون الزجاج (مثال: شفاف، عاكس...)">
+                            </div>
+                            <div>
+                                <label>السماكة</label>
+                                <div style="display: flex; align-items: stretch;">
+                                    <input type="number" id="p-thick1" placeholder="السماكة" style="border-radius: 0 4px 4px 0; flex: 1; border-left: 0; margin: 0;">
+                                    <span style="background: #e5e7eb; padding: 0.6rem 1rem; border: 1px solid #d1d5db; border-radius: 4px 0 0 4px; font-weight: bold; display: flex; align-items: center; color: #374151; font-family: monospace;">mm</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="box-spacer" class="hidden" style="background:#fef3c7; padding:12px; border-radius:5px; margin-bottom:10px; border:2px dashed #f59e0b; text-align:center;">
+                        <label style="color:#b45309; font-size:1.1rem; margin-bottom:10px;">سماكة السبايسر (الفراغ بين الطبقتين)</label>
+                        <div style="display: flex; align-items: stretch; max-width: 300px; margin: 0 auto;">
+                            <input type="number" id="p-spacer" placeholder="مثال: 10" style="border-radius: 0 4px 4px 0; flex: 1; border-left: 0; margin: 0; text-align:center; font-size:1.1rem; font-weight:bold;">
+                            <span style="background: #e5e7eb; padding: 0.6rem 1rem; border: 1px solid #d1d5db; border-radius: 4px 0 0 4px; font-weight: bold; display: flex; align-items: center; color: #374151; font-family: monospace;">mm</span>
+                        </div>
+                    </div>
+
+                    <div id="box-glass2" class="hidden" style="background:#fff; padding:12px; border-radius:5px; margin-bottom:10px; border:1px solid #7dd3fc;">
+                        <h5 style="margin:0 0 10px 0; color:#0369a1;" id="title-layer1">مواصفات الزجاج (الطبقة الثانية)</h5>
+                        <div class="flex-row">
+                            <div>
+                                <label>نوع الزجاج</label>
+                                <select id="p-type2">
+                                    <option value="عادي">عادي</option>
+                                    <option value="سيكوريت">سيكوريت</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>لون الزجاج</label>
+                                <input type="text" id="p-color2" placeholder="اكتب لون الزجاج (مثال: شفاف، أزرق...)">
+                            </div>
+                            <div>
+                                <label>السماكة</label>
+                                <div style="display: flex; align-items: stretch;">
+                                    <input type="number" id="p-thick2" placeholder="السماكة" style="border-radius: 0 4px 4px 0; flex: 1; border-left: 0; margin: 0;">
+                                    <span style="background: #e5e7eb; padding: 0.6rem 1rem; border: 1px solid #d1d5db; border-radius: 4px 0 0 4px; font-weight: bold; display: flex; align-items: center; color: #374151; font-family: monospace;">mm</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="background:#fff; padding:12px; border-radius:5px; margin-bottom:10px; border:2px dashed #0284c7;">
+                        <h5 style="margin:0 0 10px 0; color:#0369a1;">الخدمات الإضافية للطلبية (تطبق كإعداد افتراضي على جميع القطع)</h5>
+                        <div class="checkbox-group" style="margin-bottom: 0; background: transparent; border: none; padding: 0;">
+                            <label style="border:1px solid #d1d5db; background:#f9fafb;"><input type="checkbox" id="g-chk-holes" onchange="syncGlobalServices()"> تخريق لجميع القطع</label>
+                            <label style="border:1px solid #d1d5db; background:#f9fafb;"><input type="checkbox" id="g-chk-sand" onchange="syncGlobalServices()"> رمل لجميع القطع</label>
+                            <label style="border:1px solid #d1d5db; background:#f9fafb;"><input type="checkbox" id="g-chk-draw" onchange="syncGlobalServices()"> رسم لجميع القطع</label>
+                            <label style="border:1px solid #d1d5db; background:#f9fafb;"><input type="checkbox" id="g-chk-install" onchange="syncGlobalServices()"> مع تركيب</label>
+                            <label style="border:1px solid #d1d5db; background:#f9fafb;"><input type="checkbox" id="g-chk-delivery" onchange="syncGlobalServices()"> مع توصيل</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="background: #f0fdf4; padding: 15px; border-radius: 5px; border: 2px solid #a7f3d0; margin-bottom:15px;">
+                    <h4 style="margin-top:0; color:#047857;">2. إضافة القطع</h4>
+                    
+                    <div class="flex-row">
+                        <div>
+                            <label>نوع الجلخ (الحواف)</label>
+                            <select id="p-edge">
+                                <option value="بدون">بدون جلخ</option>
+                                <option value="مكنة">جلخ مكنة</option>
+                                <option value="صاروخ">جلخ صاروخ</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <label style="color:#047857;">الخدمات لهذه القطعة تحديداً (موروثة من الإعداد العام للطلبية أعلاه)</label>
+                    <div class="checkbox-group" style="margin-bottom: 15px; background: transparent; border: none; padding: 0;">
+                        <label style="border:1px solid #d1d5db; background:#fff;"><input type="checkbox" id="chk-holes"> تخريق</label>
+                        <label style="border:1px solid #d1d5db; background:#fff;"><input type="checkbox" id="chk-sand"> رمل</label>
+                        <label style="border:1px solid #d1d5db; background:#fff;"><input type="checkbox" id="chk-draw"> رسم</label>
+                        <label style="border:1px solid #d1d5db; background:#fff;"><input type="checkbox" id="chk-install"> مع تركيب</label>
+                        <label style="border:1px solid #d1d5db; background:#fff;"><input type="checkbox" id="chk-delivery"> مع توصيل</label>
+                    </div>
+
+                    <div class="flex-row">
+                        <div><label>الطول (سم)</label><input type="number" id="p-length" placeholder="طول"></div>
+                        <div><label>العرض (سم)</label><input type="number" id="p-width" placeholder="عرض"></div>
+                        <div><label>العدد</label><input type="number" id="p-qty" value="1" min="1"></div>
+                        <div style="flex:2;"><label>ملاحظات للورشة (أماكن التخريق الخ)</label><input type="text" id="p-notes" placeholder="مكان التخريق، تفاصيل الرسم..."></div>
+                        <div style="display: flex; align-items: flex-end;">
+                            <button onclick="addPieceToTemp()" style="margin: 0; background: #047857; height: 100%; padding: 10px;">+ أضف القطعة للطلب</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="temp-pieces-list"></div>
+                
+                <div class="totals-box" style="flex-direction: column; align-items: center; gap: 5px;">
+                    <div>إجمالي عدد القطع: <span id="total-qty-ui" style="color:red; direction:ltr; display:inline-block;">0</span></div>
+                    <div>إجمالي الأمتار المربعة: <span id="total-area-ui" style="color:red; direction:ltr; display:inline-block;">0.00</span> م²</div>
+                </div>
+
+                <div id="order-departments-container" class="hidden"></div>
+                
+                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:15px;">
+                    <button id="btn-save-order" onclick="saveOrder()" style="background: #1e3a8a; font-size: 1.2rem; padding: 15px; border-radius: 8px; flex:2;">إرسال للورشة وحفظ الطلب للزبون 🚀</button>
+                    <button id="btn-cancel-edit" onclick="cancelEdit()" class="hidden" style="background: #ef4444; font-size: 1.2rem; padding: 15px; border-radius: 8px; flex:1;">❌ إلغاء التعديل</button>
+                </div>
+            </div>
+
+            <!-- 3. قيد الإنتاج -->
+            <div id="production" class="card admin-section hidden">
+                <h3>مراقبة تتبع الإنتاج (لكل قسم وقطعة)</h3>
+                <input type="text" id="search-prod" placeholder="🔍 ابحث برقم الطلب أو اسم الزبون..." onkeyup="renderProductionTable()" style="margin-bottom: 1rem; border: 2px solid #1e3a8a; font-size:1.1rem;">
+                <div id="production-container"></div>
+            </div>
+
+            <!-- 🌟 القسم الجديد: متصفح الطلبات المتطور للرؤية فقط 🌟 -->
+            <div id="order-browser" class="card admin-section hidden">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h3 style="color: #8b5cf6; font-size:1.4rem; margin:0;">متصفح الطلبات المفلتر 🔍</h3>
+                    <button id="btn-new-search" onclick="resetBrowser()" class="hidden" style="background:#8b5cf6; width:auto; margin:0; padding:8px 15px;">🔍 إجراء بحث جديد</button>
+                </div>
+                
+                <!-- صندوق إدخال معايير البحث (يختفي عند البحث) -->
+                <div id="browser-search-box" style="background:#f5f3ff; padding:20px; border-radius:8px; border:2px solid #c4b5fd; margin-bottom:20px; transition: 0.3s;">
+                    <p style="font-size:1rem; color:#4b5563; margin-top:0; margin-bottom:20px;">أدخل بيانات في حقل أو أكثر. <br><b>ملاحظة:</b> إذا أدخلت أبعاد القطعة، سيتم عرض القطعة المطابقة فقط وإخفاء باقي قطع الطلبية لتسهيل الرؤية.</p>
+                    
+                    <div class="flex-row">
+                        <div>
+                            <label style="color:#6d28d9;">رقم الطلب</label>
+                            <input type="number" id="browser-oid" placeholder="مثال: 15...">
+                        </div>
+                        <div>
+                            <label style="color:#6d28d9;">اسم الزبون</label>
+                            <input type="text" id="browser-cname" placeholder="مثال: أحمد...">
+                        </div>
+                    </div>
+                    
+                    <div class="flex-row" style="margin-top: 15px;">
+                        <div>
+                            <label style="color:#6d28d9;">الطول (سم)</label>
+                            <input type="number" id="browser-length" placeholder="مثال: 120">
+                        </div>
+                        <div>
+                            <label style="color:#6d28d9;">العرض (سم)</label>
+                            <input type="number" id="browser-width" placeholder="مثال: 80">
+                        </div>
+                        <div>
+                            <label style="color:#6d28d9;">السماكة (ملم)</label>
+                            <input type="number" id="browser-thick" placeholder="مثال: 10">
+                        </div>
+                    </div>
+                    
+                    <button onclick="executeBrowserSearch()" style="background:#6d28d9; font-size:1.2rem; padding:15px; margin-top:20px; border-radius:8px; width:100%;">البحث وعرض المطابق فقط 🚀</button>
+                </div>
+                
+                <!-- حاوية عرض نتائج البحث -->
+                <div id="browser-container">
+                    <div style="text-align:center; padding:30px; background:#f3f4f6; border-radius:8px; border:2px dashed #d1d5db;">
+                        <span style="font-size:2rem;">⌨️</span>
+                        <p style="color:#6b7280; font-weight:bold; font-size:1.1rem; margin-top:10px;">أدخل معايير البحث واضغط على الزر في الأعلى...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. الطلبات الخالصة -->
+            <div id="completed" class="card admin-section hidden">
+                <h3>أرشيف الطلبات المسلمة والخالصة</h3>
+                <input type="text" id="search-comp" placeholder="🔍 ابحث برقم الطلب أو اسم الزبون في الأرشيف..." onkeyup="renderCompletedTable()" style="margin-bottom: 1rem; border: 2px solid #4b5563; font-size:1.1rem;">
+                <div id="completed-container"></div>
+            </div>
+
+            <!-- 5. شؤون الموظفين والإعدادات -->
+            <div id="hr-workers" class="card admin-section hidden">
+                
+                <div style="background:#e0f2fe; border: 2px solid #0284c7; padding: 15px; border-radius: 8px; margin-bottom:20px;">
+                    <h3 style="color: #0284c7; margin-top: 0;">إعدادات المؤسسة والفواتير (الترويسة)</h3>
+                    <p style="font-size:0.9rem; color:#475569;">أدخل بيانات شركتك لتظهر بشكل رسمي على أوراق الطباعة والمعاينة.</p>
+                    <div class="flex-row">
+                        <div><label>اسم الشركة/المؤسسة</label><input type="text" id="comp-name" placeholder="مثال: مؤسسة أبو حسام"></div>
+                        <div><label>رقم الهاتف</label><input type="text" id="comp-phone" placeholder="مثال: 09XXXXXXX"></div>
+                        <div><label>العنوان</label><input type="text" id="comp-address" placeholder="مثال: دمشق - المنطقة الصناعية"></div>
+                    </div>
+                    <button onclick="saveCompanyInfo()" style="background:#0284c7; margin-top:10px;">حفظ بيانات المؤسسة</button>
+
+                    <hr style="margin: 20px 0; border:1px solid #bae6fd;">
+                    
+                    <h4 style="color: #0284c7; margin-top: 0;">إعدادات الشعار (اللوغو للطباعة)</h4>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <input type="file" id="logo-upload" accept="image/*" onchange="handleLogoUpload(this)" style="background:white;">
+                        <button onclick="clearLogo()" style="background:#ef4444; width:auto; padding:10px;">حذف الشعار</button>
+                    </div>
+                    <div id="logo-preview-container" style="margin-top:10px;"></div>
+                </div>
+
+                <h3 style="color: var(--hr-color);">إدارة حسابات العمال (الصلاحيات والدخول)</h3>
+                <div class="flex-row" style="background:#e0e7ff; padding:15px; border-radius:5px;">
+                    <div><label>الاسم</label><input type="text" id="emp-name" placeholder="الاسم للدخول"></div>
+                    <div>
+                        <label>الصلاحية / القسم</label>
+                        <select id="emp-role">
+                            <option value="إدارة">إدارة (تنظيم طلبات ورؤية الكل)</option>
+                            <option value="قص">قص</option>
+                            <option value="تخريق">تخريق</option>
+                            <option value="جلخ">جلخ</option>
+                            <option value="فرن">فرن</option>
+                            <option value="تركيب">تركيب</option>
+                            <option value="توصيل">توصيل</option>
+                            <option value="دبل فتراج">دبل فتراج</option>
+                            <option value="تربلكس">تربلكس</option>
+                            <option value="رسم ورمل">رسم ورمل</option>
+                        </select>
+                    </div>
+                    <div><label>كلمة المرور (للدخول)</label><input type="text" id="emp-pass" placeholder="كلمة السر"></div>
+                    <div style="display:flex; align-items:flex-end;"><button onclick="addEmployee()" style="margin:0; background:var(--hr-color);">+ إضافة الحساب</button></div>
+                </div>
+                <div id="employees-list-container" style="margin-top:15px;"></div>
+                
+                <hr style="margin: 30px 0; border: 1px solid #e5e7eb;">
+                <div style="background: #fee2e2; border: 2px solid #ef4444; padding: 15px; border-radius: 8px; text-align: center;">
+                    <h3 style="color: #dc2626; margin-top: 0;">إعدادات النظام (تصفير العداد)</h3>
+                    <button onclick="resetOrdersCounter()" style="background: #dc2626; color: white; padding: 12px; font-size: 1.1rem; width: auto; font-weight: bold; border-radius: 5px;">🗑️ مسح جميع الطلبات وتصفير العداد للرقم 1</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 📊 نافذة تقرير إنتاج الطلب 📊 -->
+    <div id="report-modal" class="modal">
+        <div class="modal-content">
+            <button onclick="closeReportModal()" class="close-btn no-print">إغلاق ❌</button>
+            <div id="report-modal-body" style="text-align: right; padding-bottom: 20px;"></div>
+        </div>
+    </div>
+
+    <!-- نافذة الملحقات العادية (المخططات) -->
+    <div id="image-modal" class="modal">
+        <div class="modal-content" style="padding-top:15px;">
+            <div id="modal-images-container"></div>
+        </div>
+    </div>
+
+    <!-- 🌟 شاشة المعاينة الثابتة المنظمة 🌟 -->
+    <div id="fixed-preview-modal">
+        <div class="preview-top-bar">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:10px;">
+                <button onclick="executePrint()" class="btn-print-preview">🖨️ طباعة الطلب</button>
+                <button onclick="closeFixedPreview()" class="btn-close-preview">إغلاق ❌</button>
+            </div>
+            
+            <div class="top-bar-nav">
+                <button id="btn-next-page" onclick="nextPreviewPage()">التالي ◀</button>
+                <span id="preview-page-indicator">صفحة 1 من X</span>
+                <button id="btn-prev-page" onclick="prevPreviewPage()">▶ السابق</button>
+            </div>
+        </div>
+
+        <div class="preview-body-container" id="preview-body-container">
+            <div id="preview-scale-wrapper">
+                <!-- سيتم حقن كود الطلب أو الإتيكيت هنا -->
+            </div>
+        </div>
+    </div>
+
+    <!-- حاوية الطباعة الصافية المخفية (للطابعة فقط) -->
+    <div id="print-area"></div>
+
+    <script>
+        function getEnglishDate() {
+            let d = new Date();
+            let yyyy = d.getFullYear();
+            let mm = String(d.getMonth() + 1).padStart(2, '0');
+            let dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}/${mm}/${dd}`;
+        }
+        
+        function getFormattedTime() {
+            let d = new Date();
+            let hh = String(d.getHours()).padStart(2, '0');
+            let mn = String(d.getMinutes()).padStart(2, '0');
+            return `${hh}:${mn}`;
+        }
+
+        let db = {
+            customers: JSON.parse(localStorage.getItem('sys_customers')) || [],
+            employees: JSON.parse(localStorage.getItem('sys_employees')) || [],
+            orders: JSON.parse(localStorage.getItem('sys_orders')) || [], 
+        };
+
+        let tempPieces = [];
+        let tempImagesArr = [];
+        let todayDateStr = getEnglishDate(); 
+        let currentUser = null;
+        let editingOrderId = null; 
+
+        let previewPagesArray = [];
+        let currentPreviewIndex = 0;
+
+        let savedLogo = localStorage.getItem('sys_logo') || '';
+        let sysCompanyInfo = JSON.parse(localStorage.getItem('sys_company_info')) || { name: 'أبو حسام للزجاج', phone: '', address: '' };
+
+        function normalizeString(str) {
+            if(!str) return "";
+            return str.replace(/أ|إ|آ/g, 'ا').trim();
+        }
+
+        function initApp() {
+            let adminExists = db.employees.find(e => normalizeString(e.name) === 'ابو حسام');
+            if(!adminExists) {
+                db.employees.push({ id: 'admin_1', name: 'ابو حسام', role: 'إدارة', pass: '1234' });
+                saveDB();
+            }
+
+            let migrated = false;
+            db.orders.forEach(o => {
+                if (o.targetDepartments) {
+                    let oldLen = o.targetDepartments.length;
+                    o.targetDepartments = [...new Set(o.targetDepartments.map(d => (d === 'رمل' || d === 'رسم') ? 'رسم ورمل' : d))];
+                    if(oldLen !== o.targetDepartments.length || o.targetDepartments.includes('رسم ورمل')) migrated = true;
+                }
+                o.pieces.forEach(p => {
+                    if (p.requiredStages) p.requiredStages = [...new Set(p.requiredStages.map(s => (s === 'رمل' || s === 'رسم') ? 'رسم ورمل' : s))];
+                    if (p.completedStages) p.completedStages = [...new Set(p.completedStages.map(s => (s === 'رمل' || s === 'رسم') ? 'رسم ورمل' : s))];
+                    if (!p.stageDetails) {
+                        p.stageDetails = {};
+                        migrated = true;
+                        if (p.completedStages && p.completedStages.length > 0) {
+                            p.completedStages.forEach(s => {
+                                p.stageDetails[s] = { by: 'تم عبر نظام سابق', at: 'تاريخ غير متوفر' };
+                            });
+                        }
+                    }
+                });
+            });
+            if(migrated) saveDB();
+
+            let sessionUser = sessionStorage.getItem('loggedInUser');
+            if(sessionUser) {
+                currentUser = JSON.parse(sessionUser);
+                showMainApp();
+            }
+            renderLogoPreview();
+        }
+
+        function login() {
+            let inputName = normalizeString(document.getElementById('login-name').value);
+            let inputPass = document.getElementById('login-pass').value.trim();
+            let user = db.employees.find(e => normalizeString(e.name) === inputName && e.pass === inputPass);
+            
+            if(user) {
+                currentUser = user;
+                sessionStorage.setItem('loggedInUser', JSON.stringify(user));
+                showMainApp();
+            } else {
+                alert("اسم المستخدم أو كلمة المرور غير صحيحة!");
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem('loggedInUser');
+            currentUser = null;
+            document.getElementById('main-app').classList.add('hidden');
+            document.getElementById('login-screen').style.display = 'flex';
+            document.getElementById('login-name').value = '';
+            document.getElementById('login-pass').value = '';
+        }
+
+        function showMainApp() {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('main-app').classList.remove('hidden');
+            document.getElementById('user-welcome').innerText = `👤 ${currentUser.name} (${currentUser.role})`;
+            
+            if(currentUser.role !== 'إدارة') {
+                document.getElementById('tab-hr').style.display = 'none';
+            } else {
+                document.getElementById('tab-hr').style.display = 'block';
+            }
+            showSection('my-orders', document.querySelector('.my-btn'));
+        }
+
+        function saveDB() {
+            localStorage.setItem('sys_customers', JSON.stringify(db.customers));
+            localStorage.setItem('sys_employees', JSON.stringify(db.employees));
+            localStorage.setItem('sys_orders', JSON.stringify(db.orders));
+        }
+
+        function resetOrdersCounter() {
+            if(confirm("⚠️ تحذير: هل أنت متأكد أنك تريد حذف جميع الطلبات المحفوظة والبدء من رقم 1؟")) {
+                db.orders = [];
+                saveDB();
+                alert("تم تصفير العداد ومسح الطلبات بنجاح! سيبدأ الترقيم الآن من 1.");
+                location.reload(); 
+            }
+        }
+
+        function getNextOrderId() {
+            let maxId = 0;
+            if(db.orders && db.orders.length > 0) {
+                db.orders.forEach(o => {
+                    let num = parseInt(o.id);
+                    if (!isNaN(num) && num > maxId && num < 1000000) {
+                        maxId = num;
+                    }
+                });
+            }
+            return maxId === 0 ? 1 : maxId + 1;
+        }
+
+        function populateCompanySettings() {
+            document.getElementById('comp-name').value = sysCompanyInfo.name || '';
+            document.getElementById('comp-phone').value = sysCompanyInfo.phone || '';
+            document.getElementById('comp-address').value = sysCompanyInfo.address || '';
+        }
+        function saveCompanyInfo() {
+            sysCompanyInfo.name = document.getElementById('comp-name').value;
+            sysCompanyInfo.phone = document.getElementById('comp-phone').value;
+            sysCompanyInfo.address = document.getElementById('comp-address').value;
+            localStorage.setItem('sys_company_info', JSON.stringify(sysCompanyInfo));
+            alert("تم حفظ بيانات المؤسسة بنجاح!");
+        }
+        function handleLogoUpload(input) {
+            if (input.files && input.files[0]) {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    savedLogo = e.target.result;
+                    localStorage.setItem('sys_logo', savedLogo);
+                    renderLogoPreview();
+                    alert("تم حفظ الشعار بنجاح!");
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+        function clearLogo() {
+            savedLogo = '';
+            localStorage.removeItem('sys_logo');
+            renderLogoPreview();
+            document.getElementById('logo-upload').value = '';
+        }
+        function renderLogoPreview() {
+            let container = document.getElementById('logo-preview-container');
+            if(savedLogo) {
+                container.innerHTML = `<p style="margin:0 0 5px 0; font-weight:bold;">الشعار الحالي:</p><img src="${savedLogo}" style="max-height:80px; border:1px solid #ccc; border-radius:5px; padding:5px; background:#fff;">`;
+            } else {
+                container.innerHTML = `<span style="color:#64748b;">لا يوجد شعار محفوظ.</span>`;
+            }
+        }
+
+        function showSection(id, element) {
+            document.querySelectorAll('.admin-section').forEach(c => c.classList.add('hidden'));
+            document.querySelectorAll('#admin-layout .tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(id).classList.remove('hidden');
+            if(element) element.classList.add('active');
+            
+            if(id === 'orders') { 
+                if(!editingOrderId) {
+                    document.getElementById('order-date').value = todayDateStr;
+                    document.getElementById('order-id').value = getNextOrderId();
+                }
+            }
+            if(id === 'my-orders') renderMyOrdersTable();
+            if(id === 'production') renderProductionTable();
+            if(id === 'completed') renderCompletedTable();
+            if(id === 'order-browser') { } 
+            if(id === 'hr-workers') {
+                renderEmployees(); 
+                populateCompanySettings();
+            }
+            updateDropdowns();
+        }
+
+        function updateDropdowns() { 
+            filterProfileCustomer();
+            filterOrderCustomer();
+        }
+
+        function filterProfileCustomer() {
+            let searchInput = document.getElementById('search-profile-cust');
+            let term = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            let selectEl = document.getElementById('select-customer-profile');
+            let currentVal = selectEl ? selectEl.value : '';
+            let custs = db.customers.filter(c => c.name.toLowerCase().includes(term) || (c.phone && c.phone.includes(term)));
+            let opts = '<option value="">-- اختر الزبون لفتح ملفه --</option>' + custs.map(c => `<option value="${c.id}">${c.name} ${c.phone ? ' - ' + c.phone : ''}</option>`).join('');
+            if (selectEl) { selectEl.innerHTML = opts; if (currentVal && custs.find(c => c.id === currentVal)) selectEl.value = currentVal; }
+        }
+
+        function filterOrderCustomer() {
+            let searchInput = document.getElementById('search-order-cust');
+            let term = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            let selectEl = document.getElementById('order-customer');
+            let currentVal = selectEl ? selectEl.value : '';
+            let custs = db.customers.filter(c => c.name.toLowerCase().includes(term) || (c.phone && c.phone.includes(term)));
+            let opts = '<option value="">-- اختر الزبون --</option>' + custs.map(c => `<option value="${c.id}">${c.name} ${c.phone ? ' - ' + c.phone : ''}</option>`).join('');
+            if (selectEl) { selectEl.innerHTML = opts; if (currentVal && custs.find(c => c.id === currentVal)) selectEl.value = currentVal; }
+        }
+
+        function addCustomer() { 
+            let name = document.getElementById('cust-name').value; 
+            let phone = document.getElementById('cust-phone').value;
+            let address = document.getElementById('cust-address').value;
+            if(!name || !address) return alert("الرجاء إدخال اسم الزبون والعنوان!"); 
+            db.customers.push({ id: Date.now().toString(), name, phone, address }); 
+            saveDB(); updateDropdowns(); alert("تم الإضافة بنجاح"); 
+            document.getElementById('cust-name').value=''; document.getElementById('cust-phone').value=''; document.getElementById('cust-address').value=''; 
+        }
+        
+        function renderCustomerProfile() {
+            let cid = document.getElementById('select-customer-profile').value;
+            let container = document.getElementById('customer-profile-details');
+            if(!cid) { container.innerHTML = ''; return; }
+            
+            let cust = db.customers.find(c => c.id === cid);
+            let custInfoHtml = `
+            <div style="margin-bottom:20px; padding:15px; background:#e0f2fe; border:1px solid #bae6fd; border-radius:8px; font-size:1.1rem; line-height:1.8;">
+                <h4 style="margin: 0 0 10px 0; color:#0369a1;">بطاقة الزبون</h4>
+                👤 <b>الاسم:</b> ${cust.name} <br>
+                📞 <b>الهاتف:</b> ${cust.phone || 'غير مسجل'} <br>
+                📍 <b>العنوان:</b> ${cust.address || 'غير مسجل'}
+            </div>`;
+
+            let cOrders = db.orders.filter(o => o.cid === cid);
+
+            if(cOrders.length === 0) {
+                container.innerHTML = custInfoHtml + '<div style="padding:15px; background:#f3f4f6; text-align:center; border-radius:5px; font-weight:bold;">لا توجد طلبات مسجلة لهذا الزبون حتى الآن.</div>';
+                return;
+            }
+
+            let ordersHtml = cOrders.map(o => {
+                let totalPieces = o.pieces.reduce((sum, p) => sum + p.qty, 0);
+                let readyPieces = o.pieces.reduce((sum, p) => sum + (p.isDone || p.isBroken ? p.qty : 0), 0);
+                let isDelivered = o.isDelivered;
+                let isReady = o.isReady;
+                
+                let statusColor = isDelivered ? '#059669' : (isReady ? '#2563eb' : '#d97706');
+                let statusText = isDelivered ? 'الطلب مُسلم ✔️' : (isReady ? 'الطلب جاهز للتسليم 📦' : 'قيد الإنتاج ⏳');
+
+                let piecesDetails = o.pieces.map((p, idx) => {
+                    let req = p.requiredStages || ['قص'];
+                    let comp = p.completedStages || (p.isDone ? req : []);
+                    let stagesHTML = req.map(stage => {
+                        let isCompleted = comp.includes(stage);
+                        let cls = isCompleted ? 'stage-done' : 'stage-pending';
+                        let icon = isCompleted ? '✔️' : '⏳';
+                        return `<span class="stage-badge ${cls}">${icon} ${stage}</span>`;
+                    }).join('');
+
+                    return `<div class="piece-card ${p.isDone ? 'piece-done' : ''}">
+                        <div class="piece-header">
+                            <div><span class="piece-number">${idx+1}</span> <span class="piece-dims">${p.len} × ${p.wid}</span></div>
+                            <div class="piece-qty">${p.qty} قطع</div>
+                        </div>
+                        <div class="piece-details">
+                            <b style="color:#047857;">الإضافات:</b> ${p.servicesTxt||'لا يوجد'} <br>
+                            <span style="color:#d97706;"><b>ملاحظات:</b> ${p.notes || '-'}</span>
+                        </div>
+                        <div class="stages-container">
+                            ${stagesHTML}
+                        </div>
+                    </div>`;
+                }).join('');
+
+                return `
+                <div style="border: 2px solid ${isDelivered ? '#a7f3d0' : '#fde68a'}; border-radius: 8px; margin-top: 15px; background: #fff; overflow:hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div style="background: ${isDelivered ? '#d1fae5' : '#fef3c7'}; padding: 12px 15px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <div style="font-size: 1.1rem; font-weight:bold; color: #1f2937;">رقم الطلب: <span class="badge-order-id" style="font-size:1.1rem; padding:2px 8px;">${o.id}</span> | 📅 ${o.date}</div>
+                        <div style="font-weight:bold; color: ${statusColor}; background:white; padding:5px 10px; border-radius:5px;">${statusText} (جاهز ${readyPieces}/${totalPieces})</div>
+                    </div>
+                    <div style="padding: 15px 0;">
+                        <h5 style="margin:0 15px 10px 15px; color:#4b5563; border-bottom:1px solid #e5e7eb; padding-bottom:5px;">تفاصيل القطع ومراحلها:</h5>
+                        ${piecesDetails}
+                    </div>
+                </div>`;
+            }).join('');
+
+            container.innerHTML = custInfoHtml + ordersHtml;
+        }
+
+        function toggleOrderStructure() {
+            let struct = document.getElementById('p-structure').value;
+            let boxG2 = document.getElementById('box-glass2');
+            let boxSpacer = document.getElementById('box-spacer');
+            let titleL1 = document.getElementById('title-layer1');
+            
+            if (struct === 'دبل فتراج') {
+                boxG2.classList.remove('hidden');
+                boxSpacer.classList.remove('hidden');
+                titleL1.innerText = "مواصفات الزجاج (الطبقة الأولى)";
+            } else if (struct === 'تربلكس') {
+                boxG2.classList.remove('hidden');
+                boxSpacer.classList.add('hidden');
+                titleL1.innerText = "مواصفات الزجاج (الطبقة الأولى)";
+            } else {
+                boxG2.classList.add('hidden');
+                boxSpacer.classList.add('hidden');
+                titleL1.innerText = "مواصفات الزجاج (الطبقة الأساسية)";
+            }
+        }
+        
+        function handleTempImages(input) { if (tempImagesArr.length + input.files.length > 8) return alert("الحد الأقصى 8 صور!"); Array.from(input.files).forEach(file => { let reader = new FileReader(); reader.onload = function(e) { let img = new Image(); img.onload = function() { let canvas = document.createElement('canvas'); let ctx = canvas.getContext('2d'); let MAX_WIDTH = 500; let scaleSize = MAX_WIDTH / img.width; canvas.width = MAX_WIDTH; canvas.height = img.height * scaleSize; ctx.drawImage(img, 0, 0, canvas.width, canvas.height); tempImagesArr.push(canvas.toDataURL('image/jpeg', 0.6)); renderTempImages(); }; img.src = e.target.result; }; reader.readAsDataURL(file); }); input.value = ''; }
+        function renderTempImages() { document.getElementById('temp-images-preview').innerHTML = tempImagesArr.map((src, i) => `<div style="position:relative;"><img src="${src}" style="width:80px; height:80px; object-fit:cover; border-radius:5px; border:1px solid #ccc;"><button onclick="tempImagesArr.splice(${i},1); renderTempImages()" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer;">X</button></div>`).join(''); }
+
+        function syncGlobalServices() {
+            document.getElementById('chk-holes').checked = document.getElementById('g-chk-holes').checked;
+            document.getElementById('chk-sand').checked = document.getElementById('g-chk-sand').checked;
+            document.getElementById('chk-draw').checked = document.getElementById('g-chk-draw').checked;
+            document.getElementById('chk-install').checked = document.getElementById('g-chk-install').checked;
+            document.getElementById('chk-delivery').checked = document.getElementById('g-chk-delivery').checked;
+        }
+
+        function addPieceToTemp() {
+            let struct = document.getElementById('p-structure').value;
+            let type1 = document.getElementById('p-type1').value;
+            let type2 = document.getElementById('p-type2').value;
+            let edgeType = document.getElementById('p-edge').value;
+            
+            let len = parseFloat(document.getElementById('p-length').value); 
+            let wid = parseFloat(document.getElementById('p-width').value); 
+            let qty = parseInt(document.getElementById('p-qty').value); 
+            if(!len || !wid || !qty) return alert("أدخل الطول والعرض والعدد!"); 
+
+            let area_sqm = ((len * wid) / 10000) * qty;
+            let perimeter_m = (((len + wid) * 2) / 100) * qty;
+
+            let isHoles = document.getElementById('chk-holes').checked;
+            let isSand = document.getElementById('chk-sand').checked;
+            let isDraw = document.getElementById('chk-draw').checked;
+            let isInstall = document.getElementById('chk-install').checked;
+            let isDelivery = document.getElementById('chk-delivery').checked;
+
+            let notes = document.getElementById('p-notes').value;
+            
+            let servicesList = [];
+            let reqStages = ['قص']; 
+            
+            if(isHoles) { reqStages.push("تخريق"); servicesList.push("تخريق"); }
+            if(edgeType !== 'بدون') { reqStages.push("جلخ"); servicesList.push(`جلخ ${edgeType}`); }
+            if(type1 === 'سيكوريت' || type2 === 'سيكوريت') { reqStages.push("فرن"); }
+            
+            if(isSand || isDraw) { reqStages.push("رسم ورمل"); }
+            if(isSand) servicesList.push("رمل");
+            if(isDraw) servicesList.push("رسم");
+            
+            if(isInstall) { reqStages.push("تركيب"); servicesList.push("مع تركيب"); }
+            if(isDelivery) { reqStages.push("توصيل"); servicesList.push("مع توصيل"); }
+            
+            tempPieces.push({ 
+                id: Date.now().toString(), 
+                servicesTxt: servicesList.join(' ، '), 
+                notes: notes, len: len, wid: wid, qty: qty, area: area_sqm, perimeter: perimeter_m,
+                requiredStages: [...new Set(reqStages)],
+                completedStages: [],
+                stageDetails: {}, 
+                isDone: false, isBroken: false, brokenStage: '', brokenBy: '', breakReason: '', issueType: '', lastWorker: '' 
+            }); 
+            
+            document.getElementById('p-length').value = ''; document.getElementById('p-width').value = ''; 
+            document.getElementById('p-qty').value = '1'; document.getElementById('p-notes').value = ''; 
+            
+            syncGlobalServices();
+            renderTempPieces(); 
+        }
+
+        function renderTempPieces() { 
+            let tQty = 0, tArea = 0; 
+            let html = tempPieces.map((p, i) => { 
+                tQty += p.qty; tArea += p.area; 
+                let stagesStr = p.requiredStages.map(s => `[${s}]`).join(' ➡️ ');
+                return `
+                <div class="piece-list-item">
+                    <div style="flex:1;">
+                        <div style="font-size:1.1rem; font-weight:bold;">القطعة #${i + 1}</div>
+                        <div style="color:#4f46e5; font-size:0.9rem; font-weight:bold;">مسار القطعة: ${stagesStr}</div>
+                        <div style="color:#047857; font-size:0.95rem;">الإضافات: ${p.servicesTxt || 'بدون إضافات'}</div>
+                        <div style="margin-top:5px; direction:ltr; text-align:right; font-size:1.1rem;">${p.len} × ${p.wid} cm | <b style="color:red;">${p.qty} pcs</b> | Area: ${p.area.toFixed(2)} m²</div>
+                    </div>
+                    <button style="width:auto; margin:0 10px 0 0; padding:10px 15px; background:#ef4444;" onclick="tempPieces.splice(${i},1); renderTempPieces()">حذف</button>
+                </div>`; 
+            }).join(''); 
+            
+            document.getElementById('temp-pieces-list').innerHTML = html; 
+            document.getElementById('total-qty-ui').innerText = tQty; 
+            document.getElementById('total-area-ui').innerText = tArea.toFixed(2); 
+        }
+
+        function getGlassSpecString() {
+            let struct = document.getElementById('p-structure').value;
+            let type1 = document.getElementById('p-type1').value;
+            let color1 = document.getElementById('p-color1').value.trim() || 'بدون تحديد';
+            let thick1 = document.getElementById('p-thick1').value;
+            
+            let specStr = `${struct} (الطبقة 1: ${type1} | اللون: ${color1} | سماكة ${thick1} ميلة)`;
+            
+            if (struct === 'دبل فتراج') {
+                let spacer = document.getElementById('p-spacer').value;
+                let type2 = document.getElementById('p-type2').value;
+                let color2 = document.getElementById('p-color2').value.trim() || 'بدون تحديد';
+                let thick2 = document.getElementById('p-thick2').value;
+                specStr += ` + [سبايسر: ${spacer} mm] + (الطبقة 2: ${type2} | اللون: ${color2} | سماكة ${thick2} ميلة)`;
+            } else if (struct === 'تربلكس') {
+                let type2 = document.getElementById('p-type2').value;
+                let color2 = document.getElementById('p-color2').value.trim() || 'بدون تحديد';
+                let thick2 = document.getElementById('p-thick2').value;
+                specStr += ` + (الطبقة 2: ${type2} | اللون: ${color2} | سماكة ${thick2} ميلة)`;
+            }
+            return specStr;
+        }
+
+        function saveOrder() { 
+            let cid = document.getElementById('order-customer').value; 
+            let oid = document.getElementById('order-id').value;
+            
+            if(!cid || tempPieces.length === 0) return alert("اختر زبون وأضف قطع للطلب!"); 
+            
+            let thick1 = document.getElementById('p-thick1').value;
+            if(!thick1) return alert("الرجاء إدخال سماكة الزجاج للطبقة الأساسية!");
+            
+            let struct = document.getElementById('p-structure').value;
+            if (struct !== 'مفرد' && !document.getElementById('p-thick2').value) return alert("الرجاء إدخال سماكة الزجاج للطبقة الثانية!");
+            if (struct === 'دبل فتراج' && !document.getElementById('p-spacer').value) return alert("الرجاء إدخال سماكة السبايسر للـ دبل فتراج!");
+
+            let targetDeps = [];
+            let finalGlassSpec = getGlassSpecString();
+            
+            let rawSpecs = {
+                struct: struct,
+                type1: document.getElementById('p-type1').value, color1: document.getElementById('p-color1').value, thick1: document.getElementById('p-thick1').value,
+                type2: document.getElementById('p-type2').value, color2: document.getElementById('p-color2').value, thick2: document.getElementById('p-thick2').value,
+                spacer: document.getElementById('p-spacer').value,
+                gHoles: document.getElementById('g-chk-holes').checked,
+                gSand: document.getElementById('g-chk-sand').checked,
+                gDraw: document.getElementById('g-chk-draw').checked,
+                gInstall: document.getElementById('g-chk-install').checked,
+                gDelivery: document.getElementById('g-chk-delivery').checked
+            };
+
+            if (editingOrderId) {
+                let index = db.orders.findIndex(o => o.id === editingOrderId);
+                if(index > -1) {
+                    db.orders[index] = { ...db.orders[index], cid: cid, glassSpec: finalGlassSpec, rawSpecs: rawSpecs, targetDepartments: targetDeps, images: [...tempImagesArr], pieces: [...tempPieces], isReady: false };
+                    alert(`تم تعديل وتحديث الطلب (رقم ${editingOrderId}) بنجاح!`);
+                }
+                cancelEdit();
+            } else {
+                db.orders.push({ 
+                    id: oid, cid: cid, date: todayDateStr, glassSpec: finalGlassSpec, rawSpecs: rawSpecs, targetDepartments: targetDeps, 
+                    images: [...tempImagesArr], pieces: [...tempPieces], isArchived: false, isDelivered: false, isReady: false,
+                    creatorId: currentUser.id, creatorName: currentUser.name       
+                }); 
+                alert(`تم إرسال الطلب (رقم ${oid}) للورشة بنجاح!`); 
+                
+                tempPieces = []; tempImagesArr = []; renderTempImages(); renderTempPieces(); 
+                document.getElementById('search-order-cust').value = ''; 
+                document.getElementById('p-color1').value = ''; document.getElementById('p-color2').value = '';
+                document.getElementById('p-thick1').value = ''; document.getElementById('p-thick2').value = '';
+                document.getElementById('p-spacer').value = '';
+                document.getElementById('order-id').value = getNextOrderId();
+                
+                document.getElementById('g-chk-holes').checked = false;
+                document.getElementById('g-chk-sand').checked = false;
+                document.getElementById('g-chk-draw').checked = false;
+                document.getElementById('g-chk-install').checked = false;
+                document.getElementById('g-chk-delivery').checked = false;
+                syncGlobalServices();
+            }
+            saveDB(); 
+            refreshActiveViews(); 
+        }
+
+        function editOrder(oid) {
+            let order = db.orders.find(o => o.id === oid);
+            if(!order) return;
+            editingOrderId = oid;
+            
+            showSection('orders', document.querySelectorAll('.tabs .tab')[2]); 
+            
+            document.getElementById('create-order-title').innerHTML = `✏️ وضع التعديل (أنت الآن تعدل الطلب رقم <span class="badge-order-id" style="font-size:1.1rem; padding: 0 8px;">${oid}</span>)`;
+            document.getElementById('order-id').value = order.id;
+            document.getElementById('order-date').value = order.date;
+            document.getElementById('order-customer').value = order.cid;
+            
+            tempPieces = JSON.parse(JSON.stringify(order.pieces));
+            tempImagesArr = [...(order.images || [])];
+            renderTempImages(); renderTempPieces();
+
+            if(order.rawSpecs) {
+                document.getElementById('p-structure').value = order.rawSpecs.struct || 'مفرد'; toggleOrderStructure();
+                document.getElementById('p-type1').value = order.rawSpecs.type1 || 'عادي'; document.getElementById('p-color1').value = order.rawSpecs.color1 || ''; document.getElementById('p-thick1').value = order.rawSpecs.thick1 || '';
+                document.getElementById('p-type2').value = order.rawSpecs.type2 || 'عادي'; document.getElementById('p-color2').value = order.rawSpecs.color2 || ''; document.getElementById('p-thick2').value = order.rawSpecs.thick2 || '';
+                document.getElementById('p-spacer').value = order.rawSpecs.spacer || '';
+                
+                document.getElementById('g-chk-holes').checked = order.rawSpecs.gHoles || false;
+                document.getElementById('g-chk-sand').checked = order.rawSpecs.gSand || false;
+                document.getElementById('g-chk-draw').checked = order.rawSpecs.gDraw || false;
+                document.getElementById('g-chk-install').checked = order.rawSpecs.gInstall || false;
+                document.getElementById('g-chk-delivery').checked = order.rawSpecs.gDelivery || false;
+                syncGlobalServices();
+            }
+
+            document.getElementById('btn-save-order').innerText = "💾 حفظ التعديلات وتحديث الطلب";
+            document.getElementById('btn-save-order').style.background = "#d97706";
+            document.getElementById('btn-cancel-edit').classList.remove('hidden');
+            window.scrollTo(0, 0);
+        }
+
+        function cancelEdit() {
+            editingOrderId = null;
+            document.getElementById('create-order-title').innerHTML = "تفصيل الطلبية و إرسالها للورشة";
+            document.getElementById('btn-save-order').innerText = "إرسال للورشة وحفظ الطلب للزبون 🚀";
+            document.getElementById('btn-save-order').style.background = "#1e3a8a";
+            document.getElementById('btn-cancel-edit').classList.add('hidden');
+            document.getElementById('order-id').value = getNextOrderId();
+            document.getElementById('order-date').value = todayDateStr;
+            document.getElementById('search-order-cust').value = ''; document.getElementById('order-customer').value = '';
+            tempPieces = []; tempImagesArr = []; renderTempImages(); renderTempPieces(); 
+            document.getElementById('p-color1').value = ''; document.getElementById('p-color2').value = '';
+            document.getElementById('p-thick1').value = ''; document.getElementById('p-thick2').value = ''; document.getElementById('p-spacer').value = '';
+            
+            document.getElementById('g-chk-holes').checked = false;
+            document.getElementById('g-chk-sand').checked = false;
+            document.getElementById('g-chk-draw').checked = false;
+            document.getElementById('g-chk-install').checked = false;
+            document.getElementById('g-chk-delivery').checked = false;
+            syncGlobalServices();
+
+            showSection('my-orders', document.querySelector('.my-btn'));
+        }
+
+        function refreshActiveViews() {
+            renderProductionTable();
+            renderCompletedTable();
+            renderMyOrdersTable();
+            
+            if (document.getElementById('browser-search-box').style.display === 'none') {
+                executeBrowserSearch();
+            }
+            if(document.getElementById('select-customer-profile').value) renderCustomerProfile();
+        }
+
+        function toggleStage(oid, pIndex, stageName) {
+            let order = db.orders.find(o => o.id === oid);
+            if(order && order.pieces[pIndex]) {
+                let piece = order.pieces[pIndex];
+                if (!piece.stageDetails) piece.stageDetails = {};
+
+                if(piece.completedStages.includes(stageName)) {
+                    piece.completedStages = piece.completedStages.filter(s => s !== stageName);
+                    delete piece.stageDetails[stageName];
+                } else {
+                    piece.completedStages.push(stageName);
+                    piece.stageDetails[stageName] = {
+                        by: currentUser.name,
+                        at: `${getEnglishDate()} - ${getFormattedTime()}`
+                    };
+                }
+                piece.isDone = piece.requiredStages.every(s => piece.completedStages.includes(s));
+                
+                let allPiecesDone = order.pieces.every(p => p.isDone);
+                order.isReady = allPiecesDone;
+
+                saveDB();
+                refreshActiveViews();
+            }
+        }
+
+        function markOrderReady(oid) {
+            let order = db.orders.find(o => o.id === oid);
+            if(order) { order.isReady = true; saveDB(); refreshActiveViews(); }
+        }
+
+        function markOrderDelivered(oid) {
+            if(confirm("هل أنت متأكد من تسليم البضاعة للزبون؟ سيتم نقل الطلب للأرشيف تلقائياً.")) {
+                let order = db.orders.find(o => o.id === oid);
+                if(order) {
+                    order.isDelivered = true; order.isArchived = true; saveDB(); 
+                    refreshActiveViews();
+                    alert("تم التسليم ونقل الطلب للأرشيف بنجاح!");
+                }
+            }
+        }
+
+        // --- 🌟 نافذة تقرير إنتاج الطلب (تم تعديلها لتصبح البون المخصص للتتبع والشطب) 🌟 ---
+        function openProductionReport(oid) {
+            let order = db.orders.find(o => o.id === oid);
+            if (!order) return;
+            
+            let cName = (db.customers.find(c => c.id === order.cid) || {}).name || 'غير محدد';
+            let logoHTML = savedLogo ? `<img src="${savedLogo}" style="max-height:80px; object-fit:contain; max-width:120px;">` : '';
+            
+            let activeStages = new Set();
+            activeStages.add('قص');
+            if (order.rawSpecs) {
+                if (order.rawSpecs.struct === 'دبل فتراج') activeStages.add('دبل فتراج');
+                if (order.rawSpecs.struct === 'تربلكس') activeStages.add('تربلكس');
+                if (order.rawSpecs.type1 === 'سيكوريت' || order.rawSpecs.type2 === 'سيكوريت') activeStages.add('فرن');
+            }
+            order.pieces.forEach(p => {
+                p.requiredStages.forEach(s => {
+                    let n = (s === 'رسم' || s === 'رمل') ? 'رسم ورمل' : s;
+                    activeStages.add(n);
+                });
+            });
+
+            // 🌟 تحديد حالة الطلب الشاملة 🌟
+            let orderStatusText = order.isDelivered ? 'الطلب مُسلّم بالكامل 📦' : (order.isReady ? 'الطلب جاهز للتسليم ✔️' : 'الطلب قيد الإنتاج بالورشة ⏳');
+            let orderStatusColor = order.isDelivered ? '#4b5563' : (order.isReady ? '#059669' : '#d97706');
+            let orderStatusBg = order.isDelivered ? '#e5e7eb' : (order.isReady ? '#d1fae5' : '#fef3c7');
+
+            let reportHTML = `
+                <div style="border-bottom: 2px solid #1e3a8a; padding-bottom: 10px; margin-bottom: 15px;">
+                    <h2 style="color:#1e3a8a; margin:0 0 10px 0;">📊 تقرير تتبع الإنتاج (الطلب: <span class="badge-order-id" style="font-size:1.5rem;">${order.id}</span>)</h2>
+                    <div style="background:${orderStatusBg}; color:${orderStatusColor}; padding:10px; text-align:center; font-weight:bold; border-radius:6px; border: 2px dashed ${orderStatusColor}; font-size:1.2rem;">
+                        حالة الطلب الإجمالية: ${orderStatusText}
+                    </div>
+                </div>
+            `;
+
+            activeStages.forEach(stage => {
+                let stagePieces = [];
+                
+                order.pieces.forEach((p, idx) => {
+                    let belongs = false;
+                    if (['قص', 'دبل فتراج', 'تربلكس'].includes(stage)) {
+                        belongs = true; 
+                    } else if (stage === 'فرن') {
+                        if (p.requiredStages.includes('فرن') || order.rawSpecs.type1 === 'سيكوريت' || order.rawSpecs.type2 === 'سيكوريت') belongs = true;
+                    } else if (stage === 'توصيل' || stage === 'تركيب') {
+                        belongs = true; 
+                    } else {
+                        let pStages = p.requiredStages.map(s => (s === 'رسم' || s === 'رمل') ? 'رسم ورمل' : s);
+                        if (pStages.includes(stage)) belongs = true;
+                    }
+                    if (belongs) stagePieces.push({ piece: p, originalIdx: idx });
+                });
+
+                if (stagePieces.length === 0) return;
+
+                let totalStageQty = 0;
+                let totalStageArea = 0;
+
+                let piecesHTML = stagePieces.map(sp => {
+                    let p = sp.piece;
+                    let displayLen = parseFloat(p.len); let displayWid = parseFloat(p.wid);
+                    if (stage === 'قص') { displayLen += 0.3; displayWid += 0.3; } 
+                    displayLen = Math.round(displayLen * 10) / 10; displayWid = Math.round(displayWid * 10) / 10;
+                    
+                    totalStageQty += p.qty;
+                    totalStageArea += p.area;
+
+                    // 🌟 هنا السر: شطب القطعة المنفذة في تقرير الإنتاج فقط 🌟
+                    let isStageDone = p.completedStages.includes(stage) || order.isDelivered; 
+                    let workerName = (p.completedStages.includes(stage) && p.stageDetails && p.stageDetails[stage]) ? p.stageDetails[stage].by.split(' ')[0] : '';
+                    let dimStyle = isStageDone ? 'text-decoration: line-through; color: #9ca3af;' : '';
+                    let workerHtml = isStageDone ? `<div style="font-size:0.85rem; color:#059669; text-decoration:none; margin-top:3px; font-weight:normal;">✔️ (${workerName})</div>` : '';
+                    let rowBg = isStageDone ? 'background:#f8fafc;' : '';
+
+                    return `
+                    <tr style="border-bottom:1px solid #e5e7eb; ${rowBg}">
+                        <td style="padding:6px; font-weight:bold; color:#1e3a8a;">${sp.originalIdx + 1}</td>
+                        <td style="padding:6px; direction:ltr; font-weight:bold; font-size:1.1rem; white-space: nowrap;">
+                            <span style="${dimStyle}">${displayLen} × ${displayWid}</span>
+                            ${workerHtml}
+                        </td>
+                        <td style="padding:6px; color:red; font-weight:bold; background:#fee2e2; font-size:1.1rem;">${p.qty}</td>
+                    </tr>
+                    `;
+                }).join('');
+
+                reportHTML += `
+                    <div style="background:white; border-radius:8px; padding:15px; margin-bottom:20px; box-shadow:0 4px 6px rgba(0,0,0,0.1); border:1px solid #cbd5e1;">
+                        <div style="display:flex; justify-content:center; align-items:center; gap:15px; border-bottom:2px solid #1e3a8a; padding-bottom:10px; margin-bottom:10px;">
+                            <div style="text-align:center; color:#1e3a8a;">
+                                <h2 style="margin:0; font-size:1.4rem;">${sysCompanyInfo.name || 'أبو حسام للزجاج'}</h2>
+                            </div>
+                            ${logoHTML}
+                        </div>
+                        
+                        <div style="background:#1e3a8a; color:white; padding:10px; text-align:center; font-size:1.3rem; font-weight:bold; border-radius:6px; margin-bottom:10px;">
+                            طلب ${stage}
+                        </div>
+                        
+                        <div style="display:flex; border:1px solid #cbd5e1; border-radius:6px; overflow:hidden; margin-bottom:10px;">
+                            <div style="flex:1; padding:8px 4px; text-align:center; border-left:1px solid #cbd5e1;">
+                                <div style="color:#64748b; font-size:0.8rem; font-weight:bold;">اسم الزبون</div>
+                                <div style="color:#047857; font-weight:bold; font-size:0.95rem; margin-top:3px;">${cName}</div>
+                            </div>
+                            <div style="flex:1; padding:8px 4px; text-align:center; border-left:1px solid #cbd5e1;">
+                                <div style="color:#64748b; font-size:0.8rem; font-weight:bold;">رقم الطلب</div>
+                                <div style="margin-top:3px;"><span class="badge-order-id" style="font-size:0.95rem; padding: 2px 6px;">${order.id}</span></div>
+                            </div>
+                            <div style="flex:1; padding:8px 4px; text-align:center; border-left:1px solid #cbd5e1;">
+                                <div style="color:#64748b; font-size:0.8rem; font-weight:bold;">تاريخ الطلب</div>
+                                <div style="font-weight:bold; font-size:0.95rem; margin-top:3px; direction:ltr;">${order.date}</div>
+                            </div>
+                            <div style="flex:1; padding:8px 4px; text-align:center;">
+                                <div style="color:#64748b; font-size:0.8rem; font-weight:bold;">منظم الطلب</div>
+                                <div style="font-weight:bold; font-size:0.95rem; margin-top:3px; color:#1e3a8a;">${order.creatorName || 'غير معروف'}</div>
+                            </div>
+                        </div>
+
+                        <div style="background:#fefce8; border:2px solid #f59e0b; border-radius:6px; padding:10px; font-size:0.95rem; font-weight:bold; color:#854d0e; text-align:center; margin-bottom:10px;">
+                            ${order.glassSpec}
+                        </div>
+                        
+                        <div style="border:1px solid #1e3a8a; border-radius:6px; background:#f8fafc; overflow:hidden;">
+                            <table style="width:100%; border-collapse:collapse; text-align:center; font-size:0.9rem;">
+                                <tr style="background:#1e3a8a; color:white;">
+                                    <th style="padding:6px;">الرقم</th>
+                                    <th style="padding:6px;">القياسات</th>
+                                    <th style="padding:6px;">العدد</th>
+                                </tr>
+                                ${piecesHTML}
+                            </table>
+                        </div>
+                    </div>
+                `;
+            });
+
+            reportHTML += `<button onclick="printReport()" class="no-print" style="background:#059669; margin-top:20px; width:100%; padding:15px; font-size:1.2rem; border-radius:8px;">🖨️ طباعة التقرير (مع التتبع)</button>`;
+
+            document.getElementById('report-modal-body').innerHTML = reportHTML;
+            document.getElementById('report-modal').style.display = 'flex';
+        }
+
+        function closeReportModal() {
+            document.getElementById('report-modal').style.display = 'none';
+        }
+
+        function printReport() {
+            let content = document.getElementById('report-modal-body').innerHTML;
+            let printArea = document.getElementById('print-area');
+            printArea.innerHTML = `
+            <div class="a4-page" style="direction:rtl; padding:10px;">
+                ${content}
+            </div>`;
+            window.print();
+        }
+        
+        // --- 🌟 المعاينة الثابتة (البون النظيف الجاهز للطباعة الأصلية) 🌟 ---
+        function openFixedPreview(oid) {
+            let order = db.orders.find(o => o.id === oid);
+            if(!order) return;
+            
+            let cName = (db.customers.find(c => c.id === order.cid) || {}).name || 'غير محدد';
+            let logoHTML = savedLogo ? `<img src="${savedLogo}" style="max-height:80px; object-fit:contain; max-width:120px;">` : '';
+            
+            let activeStages = new Set();
+            activeStages.add('قص');
+            if (order.rawSpecs) {
+                if (order.rawSpecs.struct === 'دبل فتراج') activeStages.add('دبل فتراج');
+                if (order.rawSpecs.struct === 'تربلكس') activeStages.add('تربلكس');
+                if (order.rawSpecs.type1 === 'سيكوريت' || order.rawSpecs.type2 === 'سيكوريت') activeStages.add('فرن');
+            }
+            order.pieces.forEach(p => {
+                p.requiredStages.forEach(s => {
+                    let n = (s === 'رسم' || s === 'رمل') ? 'رسم ورمل' : s;
+                    activeStages.add(n);
+                });
+            });
+
+            previewPagesArray = []; 
+
+            activeStages.forEach(stage => {
+                let stagePieces = [];
+                
+                order.pieces.forEach((p, idx) => {
+                    let belongs = false;
+                    if (['قص', 'دبل فتراج', 'تربلكس'].includes(stage)) {
+                        belongs = true; 
+                    } else if (stage === 'فرن') {
+                        if (p.requiredStages.includes('فرن') || order.rawSpecs.type1 === 'سيكوريت' || order.rawSpecs.type2 === 'سيكوريت') belongs = true;
+                    } else if (stage === 'توصيل' || stage === 'تركيب') {
+                        belongs = true; 
+                    } else {
+                        let pStages = p.requiredStages.map(s => (s === 'رسم' || s === 'رمل') ? 'رسم ورمل' : s);
+                        if (pStages.includes(stage)) belongs = true;
+                    }
+                    if (belongs) stagePieces.push({ piece: p, originalIdx: idx });
+                });
+
+                if (stagePieces.length === 0) return;
+
+                let totalStageQty = 0;
+                let totalStageArea = 0;
+
+                let piecesHTML = stagePieces.map(sp => {
+                    let p = sp.piece;
+                    let displayLen = parseFloat(p.len); let displayWid = parseFloat(p.wid);
+                    if (stage === 'قص') { displayLen += 0.3; displayWid += 0.3; } 
+                    displayLen = Math.round(displayLen * 10) / 10; displayWid = Math.round(displayWid * 10) / 10;
+                    
+                    totalStageQty += p.qty;
+                    totalStageArea += p.area;
+
+                    // 🌟 لا يوجد شطب هنا أبداً لتبقى المعاينة نظيفة 🌟
+                    return `
+                    <tr style="border-bottom:1px solid #e5e7eb;">
+                        <td style="padding:6px; font-weight:bold; color:#1e3a8a;">${sp.originalIdx + 1}</td>
+                        <td style="padding:6px; direction:ltr; font-weight:bold; font-size:1.1rem; white-space: nowrap;">${displayLen} × ${displayWid}</td>
+                        <td style="padding:6px; color:red; font-weight:bold; background:#fee2e2; font-size:1.1rem;">${p.qty}</td>
+                    </tr>
+                    `;
+                }).join('');
+
+                let cardHTML = `
+                    <div style="display:flex; justify-content:center; align-items:center; gap:15px; border-bottom:2px solid #1e3a8a; padding-bottom:10px; margin-bottom:10px;">
+                        <div style="text-align:center; color:#1e3a8a;">
+                            <h2 style="margin:0; font-size:1.4rem;">${sysCompanyInfo.name || 'أبو حسام للزجاج'}</h2>
+                            ${sysCompanyInfo.address ? `<div style="margin-top:2px; font-weight:bold; color:#4b5563; font-size:0.8rem;">📍 العنوان: ${sysCompanyInfo.address}</div>` : ''}
+                            ${sysCompanyInfo.phone ? `<div style="margin-top:2px; font-weight:bold; color:#4b5563; font-size:0.8rem;">📞 الهاتف: ${sysCompanyInfo.phone}</div>` : ''}
+                        </div>
+                        ${logoHTML}
+                    </div>
+                    
+                    <div style="background:#1e3a8a; color:white; padding:10px; text-align:center; font-size:1.3rem; font-weight:bold; border-radius:6px; margin-bottom:10px;">
+                        طلب ${stage}
+                    </div>
+                    
+                    <div style="display:flex; border:1px solid #cbd5e1; border-radius:6px; overflow:hidden; margin-bottom:10px;">
+                        <div style="flex:1; padding:8px 4px; text-align:center; border-left:1px solid #cbd5e1;">
+                            <div style="color:#64748b; font-size:0.8rem; font-weight:bold;">اسم الزبون</div>
+                            <div style="color:#047857; font-weight:bold; font-size:0.95rem; margin-top:3px;">${cName}</div>
+                        </div>
+                        <div style="flex:1; padding:8px 4px; text-align:center; border-left:1px solid #cbd5e1;">
+                            <div style="color:#64748b; font-size:0.8rem; font-weight:bold;">رقم الطلب</div>
+                            <div style="margin-top:3px;"><span class="badge-order-id" style="font-size:0.95rem; padding: 2px 6px;">${order.id}</span></div>
+                        </div>
+                        <div style="flex:1; padding:8px 4px; text-align:center; border-left:1px solid #cbd5e1;">
+                            <div style="color:#64748b; font-size:0.8rem; font-weight:bold;">تاريخ الطلب</div>
+                            <div style="font-weight:bold; font-size:0.95rem; margin-top:3px; direction:ltr;">${order.date}</div>
+                        </div>
+                        <div style="flex:1; padding:8px 4px; text-align:center;">
+                            <div style="color:#64748b; font-size:0.8rem; font-weight:bold;">منظم الطلب</div>
+                            <div style="font-weight:bold; font-size:0.95rem; margin-top:3px; color:#1e3a8a;">${order.creatorName || 'غير معروف'}</div>
+                        </div>
+                    </div>
+
+                    <div style="background:#fefce8; border:2px solid #f59e0b; border-radius:6px; padding:10px; font-size:0.95rem; font-weight:bold; color:#854d0e; text-align:center; margin-bottom:10px;">
+                        ${order.glassSpec}
+                    </div>
+                    
+                    <div style="border:1px solid #1e3a8a; border-radius:6px; background:#f8fafc; overflow:hidden;">
+                        <table style="width:100%; border-collapse:collapse; text-align:center; font-size:0.9rem;">
+                            <tr style="background:#1e3a8a; color:white;">
+                                <th style="padding:6px;">الرقم</th>
+                                <th style="padding:6px;">القياسات</th>
+                                <th style="padding:6px;">العدد</th>
+                            </tr>
+                            ${piecesHTML}
+                        </table>
+                    </div>
+                    
+                    <div style="display:flex; gap:10px; margin-top:15px;">
+                        <div style="flex:1; background:#eff6ff; border:1px solid #bfdbfe; padding:10px; border-radius:8px; text-align:center;">
+                            <div style="color:#1e3a8a; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">إجمالي عدد القطع</div>
+                            <div style="color:#dc2626; font-size:1.3rem; font-weight:bold;">${totalStageQty}</div>
+                        </div>
+                        <div style="flex:1; background:#f0fdf4; border:1px solid #bbf7d0; padding:10px; border-radius:8px; text-align:center;">
+                            <div style="color:#047857; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">إجمالي الأمتار المربعة</div>
+                            <div style="color:#dc2626; font-size:1.3rem; font-weight:bold; direction:ltr;">${totalStageArea.toFixed(2)} م²</div>
+                        </div>
+                    </div>
+                `;
+                
+                previewPagesArray.push({ title: `طلب\n${stage}`, html: cardHTML, type: 'stage' });
+            });
+
+            let labelLogoHTML = savedLogo ? `<img src="${savedLogo}" style="max-height:55px; max-width:90%; object-fit:contain;">` : `<span style="font-weight:bold; font-size:18px;">${sysCompanyInfo.name || 'أبو حسام للزجاج'}</span>`;
+            let totalOrderQty = order.pieces.reduce((sum, p) => sum + p.qty, 0);
+            
+            let labelsHTML = `<div style="text-align:center; color:#1e3a8a; margin-bottom:15px; width:100%;"><h2 style="margin:0;">✂️ نموذج الإتيكيت</h2><p style="margin:5px 0 0 0; color:#ef4444; font-weight:bold;">(اسحب للأسفل لرؤية باقي الملصقات)</p></div>`;
+            labelsHTML += `<div style="display:flex; flex-direction:column; gap:15px; align-items:center; padding-bottom:30px; width:100%;">`;
+            
+            let labelCount = 0;
+            for(let i=0; i<order.pieces.length; i++) {
+                let p = order.pieces[i];
+                for(let q = 1; q <= p.qty; q++) {
+                    if(labelCount >= 20) break;
+                    labelsHTML += `
+                    <div style="width: 100%; max-width: 320px; border: 2px solid #1e3a8a; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; justify-content: space-between; background:#fff; box-shadow: 0 4px 6px rgba(0,0,0,0.2); margin: 0 auto;">
+                        <div style="display: flex; justify-content: center; align-items: center; border-bottom: 2px solid #cbd5e1; padding-bottom: 5px; margin-bottom: 5px; min-height: 60px;">
+                            ${labelLogoHTML}
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:5px;">
+                            <div style="display:flex; justify-content:space-between; font-size:14px; border-bottom:1px dashed #e5e7eb; padding-bottom:3px;"><span>الزبون:</span> <b style="font-size:15px; color:#047857;">${cName}</b></div>
+                            <div style="display:flex; justify-content:space-between; font-size:14px; border-bottom:1px dashed #e5e7eb; padding-bottom:3px;"><span>طلب رقم:</span> <span class="badge-order-id" style="font-size:1rem; padding: 0 5px;">${order.id}</span></div>
+                            <div style="display:flex; justify-content:space-between; font-size:14px; border-bottom:1px dashed #e5e7eb; padding-bottom:3px;"><span>التاريخ:</span> <b>${order.date}</b></div>
+                            <div style="display:flex; justify-content:space-between; font-size:14px; border-bottom:1px dashed #e5e7eb; padding-bottom:3px;"><span>منظم الطلب:</span> <b>${order.creatorName || 'غير معروف'}</b></div>
+                            <div style="display:flex; justify-content:space-between; font-size:14px;"><span>القطعة:</span> <b style="color:#dc2626;">${i + 1} (نسخة ${q}/${p.qty})</b></div>
+                        </div>
+                        <div style="text-align:center; font-size:26px; font-weight:bold; direction:ltr; margin-top:10px; background:#e0f2fe; color:#1e3a8a; border:1px solid #bfdbfe; border-radius:4px; padding:8px; white-space: nowrap;">
+                            ${p.len} × ${p.wid}
+                        </div>
+                    </div>
+                    `;
+                    labelCount++;
+                }
+            }
+            if(totalOrderQty > 20) {
+                labelsHTML += `<div style="width:100%; text-align:center; color:#ef4444; font-weight:bold; margin-top:10px; font-size:1rem;">(أظهرنا 20 ملصقاً... ستُطبع جميع الإتيكيتات الـ ${totalOrderQty} عند الطباعة الحقيقية)</div>`;
+            }
+            labelsHTML += `</div>`;
+
+            previewPagesArray.push({ title: 'الإتيكيت', html: labelsHTML, type: 'labels' });
+
+            if(order.images && order.images.length > 0) {
+                order.images.forEach((img, idx) => {
+                    let imgHtml = `
+                        <div style="text-align:center; color:#1e3a8a; margin-bottom:15px;">
+                            <h2 style="margin:0; font-size:1.3rem;">مخطط مرفق (رقم الطلب: ${order.id})</h2>
+                        </div>
+                        <div style="display:flex; justify-content:center; align-items:center; background:#f8fafc; border:2px dashed #cbd5e1; border-radius:8px; padding:10px; height:400px; box-sizing:border-box;">
+                            <img src="${img}" style="max-width:100%; max-height:100%; object-fit:contain; border-radius:4px;">
+                        </div>
+                    `;
+                    previewPagesArray.push({ title: `مخطط\n${idx+1}`, html: imgHtml, type: 'image' });
+                });
+            }
+
+            currentPreviewIndex = 0;
+            document.getElementById('fixed-preview-modal').style.display = 'flex';
+            
+            generateHiddenPrintContent(order, cName, activeStages);
+
+            renderCurrentPreviewPage();
+        }
+
+        function renderCurrentPreviewPage() {
+            let wrapper = document.getElementById('preview-scale-wrapper');
+            let parent = document.getElementById('preview-body-container');
+            let currentPage = previewPagesArray[currentPreviewIndex];
+            
+            wrapper.innerHTML = currentPage.html;
+            document.getElementById('preview-page-indicator').innerText = `صفحة ${currentPreviewIndex + 1} من ${previewPagesArray.length}\n(${currentPage.title})`;
+            document.getElementById('btn-prev-page').disabled = (currentPreviewIndex === 0);
+            document.getElementById('btn-next-page').disabled = (currentPreviewIndex === previewPagesArray.length - 1);
+            
+            wrapper.style.transform = 'translate(-50%, -50%) scale(1)';
+            
+            setTimeout(() => {
+                if (currentPage.type === 'labels') {
+                    wrapper.style.position = 'relative';
+                    wrapper.style.transform = 'none';
+                    wrapper.style.top = '0';
+                    wrapper.style.left = '0';
+                    wrapper.style.margin = '20px auto';
+                    wrapper.style.maxWidth = '100%'; 
+                    parent.style.overflowY = 'auto'; 
+                    parent.style.alignItems = 'flex-start';
+                } else {
+                    wrapper.style.position = 'absolute';
+                    wrapper.style.top = '50%';
+                    wrapper.style.left = '50%';
+                    wrapper.style.margin = '0';
+                    parent.style.overflowY = 'hidden'; 
+                    parent.style.alignItems = 'center';
+
+                    let pW = parent.clientWidth - 20;
+                    let pH = parent.clientHeight - 20; 
+                    let wW = wrapper.offsetWidth; 
+                    let wH = wrapper.offsetHeight; 
+                    
+                    let scaleX = pW / wW;
+                    let scaleY = pH / wH;
+                    let scale = Math.min(scaleX, scaleY); 
+                    
+                    wrapper.style.transform = `translate(-50%, -50%) scale(${scale})`;
+                }
+            }, 10);
+        }
+
+        function nextPreviewPage() {
+            if(currentPreviewIndex < previewPagesArray.length - 1) {
+                currentPreviewIndex++;
+                renderCurrentPreviewPage();
+            }
+        }
+
+        function prevPreviewPage() {
+            if(currentPreviewIndex > 0) {
+                currentPreviewIndex--;
+                renderCurrentPreviewPage();
+            }
+        }
+
+        function closeFixedPreview() {
+            document.getElementById('fixed-preview-modal').style.display = 'none';
+        }
+
+        function generateHiddenPrintContent(order, cName, activeStages) {
+            let printHTML = '';
+            let labelLogoHTML = savedLogo ? `<img src="${savedLogo}" style="max-height:45px; max-width:90%; object-fit:contain;">` : `<span style="font-weight:bold; font-size:16px;">${sysCompanyInfo.name || 'أبو حسام للزجاج'}</span>`;
+            let invoiceLogoHTML = savedLogo ? `<img src="${savedLogo}" class="invoice-logo-img">` : '';
+
+            activeStages.forEach(stage => {
+                let stagePieces = [];
+                order.pieces.forEach((p, idx) => {
+                    let belongs = false;
+                    if (['قص', 'دبل فتراج', 'تربلكس'].includes(stage)) belongs = true;
+                    else if (stage === 'فرن') {
+                        if (p.requiredStages.includes('فرن') || order.rawSpecs.type1 === 'سيكوريت' || order.rawSpecs.type2 === 'سيكوريت') belongs = true;
+                    } else if (stage === 'توصيل' || stage === 'تركيب') belongs = true;
+                    else {
+                        let pStages = p.requiredStages.map(s => (s === 'رسم' || s === 'رمل') ? 'رسم ورمل' : s);
+                        if (pStages.includes(stage)) belongs = true;
+                    }
+                    if (belongs) stagePieces.push({ piece: p, originalIdx: idx });
+                });
+
+                if (stagePieces.length === 0) return;
+
+                let totalStageQty = 0; let totalStageArea = 0;
+
+                printHTML += `
+                <div class="a4-page">
+                    <div class="invoice-header">
+                        <div class="invoice-logo-container">${invoiceLogoHTML}</div>
+                        <div class="invoice-company-info">
+                            <h1>${sysCompanyInfo.name || 'أبو حسام للزجاج'}</h1>
+                            ${sysCompanyInfo.address ? `<p>📍 العنوان: ${sysCompanyInfo.address}</p>` : ''}
+                            ${sysCompanyInfo.phone ? `<p>📞 الهاتف: <span style="direction:ltr; display:inline-block;">${sysCompanyInfo.phone}</span></p>` : ''}
+                        </div>
+                    </div>
+                    <div class="invoice-title"><h2>طلب ${stage}</h2></div>
+                    <div class="invoice-meta">
+                        <div><div class="invoice-meta-title">اسم الزبون</div><div class="invoice-meta-value" style="color:#047857;">${cName}</div></div>
+                        <div><div class="invoice-meta-title">رقم الطلب</div><div class="invoice-meta-value"><span class="badge-order-id">${order.id}</span></div></div>
+                        <div><div class="invoice-meta-title">تاريخ الطلب</div><div class="invoice-meta-value" style="direction:ltr;">${order.date}</div></div>
+                        <div><div class="invoice-meta-title">منظم الطلب</div><div class="invoice-meta-value" style="color:#1e3a8a;">${order.creatorName || 'غير معروف'}</div></div>
+                    </div>
+
+                    <div class="invoice-spec">📋 <b>مواصفات الزجاج:</b> ${order.glassSpec}</div>
+                    <table class="invoice-table">
+                        <thead>
+                            <tr>
+                                <th style="width:50px;">الرقم</th>
+                                <th>الطول (سم)</th>
+                                <th>العرض (سم)</th>
+                                <th style="width:80px;">العدد</th>
+                                <th>ملاحظات / الإضافات للقطعة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                stagePieces.forEach(sp => {
+                    let p = sp.piece;
+                    totalStageQty += p.qty; totalStageArea += p.area;
+                    let displayLen = parseFloat(p.len); let displayWid = parseFloat(p.wid);
+                    if (stage === 'قص') { displayLen += 0.3; displayWid += 0.3; }
+                    displayLen = Math.round(displayLen * 10) / 10; displayWid = Math.round(displayWid * 10) / 10;
+
+                    // 🌟 هنا الطباعة الورقية الأصلية نظيفة 100% بدون أي شطب 🌟
+                    printHTML += `
+                        <tr>
+                            <td style="font-weight:bold;">${sp.originalIdx + 1}</td>
+                            <td style="direction:ltr; font-weight:bold; white-space: nowrap;">${displayLen}</td>
+                            <td style="direction:ltr; font-weight:bold; white-space: nowrap;">${displayWid}</td>
+                            <td style="color:red; font-weight:bold; font-size:1.3rem;">${p.qty}</td>
+                            <td style="font-size:1rem; text-align:right;">
+                                <div style="color:#047857; font-weight:bold;">${p.servicesTxt || '-'}</div>
+                                <div style="color:#4b5563;">${p.notes || ''}</div>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                printHTML += `
+                        </tbody>
+                    </table>
+                    <div style="display:flex; gap:15px; margin-top:20px;">
+                        <div style="flex:1; border:2px solid #1e3a8a; padding:10px; border-radius:8px; text-align:center; background:#f8fafc !important; -webkit-print-color-adjust: exact;">
+                            <span style="font-size:1.1rem; font-weight:bold; color:#1e3a8a;">إجمالي عدد القطع:</span>
+                            <span style="font-size:1.3rem; font-weight:bold; color:red; margin-right:10px;">${totalStageQty}</span>
+                        </div>
+                        <div style="flex:1; border:2px solid #047857; padding:10px; border-radius:8px; text-align:center; background:#f0fdf4 !important; -webkit-print-color-adjust: exact;">
+                            <span style="font-size:1.1rem; font-weight:bold; color:#047857;">إجمالي الأمتار المربعة:</span>
+                            <span style="font-size:1.3rem; font-weight:bold; color:red; margin-right:10px; direction:ltr; display:inline-block;">${totalStageArea.toFixed(2)} م²</span>
+                        </div>
+                    </div>
+                </div>
+                `;
+            });
+
+            printHTML += `
+            <div class="labels-page">
+                <h2 style="text-align:center; padding-top:10px; border-bottom:2px dashed #ccc; padding-bottom:10px; margin-bottom:20px;">✂️ ملصقات القطع (الإتيكيت)</h2>
+                <div class="labels-container">
+            `;
+            order.pieces.forEach((p, idx) => {
+                for(let q = 1; q <= p.qty; q++) {
+                    printHTML += `
+                    <div style="width: 7.5cm; height: 4.5cm; border: 2px solid #000; border-radius: 8px; padding: 8px; display: flex; flex-direction: column; justify-content: space-between; font-family: Arial, sans-serif; background:#fff; box-sizing: border-box; page-break-inside: avoid;">
+                        <div style="display: flex; justify-content: center; align-items: center; border-bottom: 2px solid #000; padding-bottom: 3px; margin-bottom: 3px; min-height:45px;">${labelLogoHTML}</div>
+                        <div style="flex:1; display:flex; flex-direction:column; gap:2px;">
+                            <div style="display:flex; justify-content:space-between; font-size:13px;"><span>الزبون:</span> <b style="font-size:14px;">${cName}</b></div>
+                            <div style="display:flex; justify-content:space-between; font-size:13px;"><span>طلب رقم:</span> <span class="badge-order-id" style="font-size:0.9rem; padding: 0 5px;">${order.id}</span></div>
+                            <div style="display:flex; justify-content:space-between; font-size:13px;"><span>التاريخ:</span> <b>${order.date}</b></div>
+                            <div style="display:flex; justify-content:space-between; font-size:13px;"><span>منظم الطلب:</span> <b>${order.creatorName || 'غير معروف'}</b></div>
+                            <div style="display:flex; justify-content:space-between; font-size:13px;"><span>القطعة:</span> <b style="color:#dc2626;">${idx + 1} (نسخة ${q}/${p.qty})</b></div>
+                        </div>
+                        <div style="text-align:center; font-size:22px; font-weight:bold; direction:ltr; margin-top:3px; background:#f3f4f6 !important; -webkit-print-color-adjust: exact; border-radius:4px; padding:2px; white-space: nowrap;">${p.len} × ${p.wid}</div>
+                    </div>
+                    `;
+                }
+            });
+            printHTML += `</div></div>`;
+
+            if (order.images && order.images.length > 0) {
+                order.images.forEach((img, idx) => {
+                    printHTML += `
+                    <div class="a4-page" style="display:flex; flex-direction:column; align-items:center; justify-content:flex-start;">
+                        <div class="invoice-header" style="width:100%;">
+                            <div class="invoice-logo-container">${invoiceLogoHTML}</div>
+                            <div class="invoice-company-info">
+                                <h1>${sysCompanyInfo.name || 'أبو حسام للزجاج'}</h1>
+                            </div>
+                        </div>
+                        <h2 style="text-align:center; border-bottom:2px solid #ccc; padding-bottom:10px; width:100%; color:#1e3a8a;">مخطط مرفق للطلب رقم: ${order.id}</h2>
+                        <img src="${img}" style="max-width:100%; max-height:750px; object-fit:contain; margin-top:10px;">
+                    </div>
+                    `;
+                });
+            }
+
+            document.getElementById('print-area').innerHTML = printHTML;
+        }
+
+        function executePrint() {
+            window.print();
+        }
+
+        function printImagesOnly(oid) {
+            let order = db.orders.find(x => x.id === oid);
+            if(!order || !order.images || order.images.length === 0) return;
+            
+            let printHTML = '';
+            order.images.forEach((img, idx) => {
+                printHTML += `
+                <div class="a4-page" style="display:flex; flex-direction:column; align-items:center; justify-content:flex-start;">
+                    <h2 style="text-align:center; border-bottom:2px solid #000; padding-bottom:10px; width:100%;">مخطط الطلب رقم: ${order.id} (مرفق ${idx+1})</h2>
+                    <img src="${img}" style="max-width:100%; max-height:800px; object-fit:contain; margin-top:20px;">
+                </div>
+                `;
+            });
+            document.getElementById('print-area').innerHTML = printHTML;
+            window.print();
+        }
+
+        function openModal(oId) { 
+            let o = db.orders.find(x => x.id === oId); 
+            let buttons = `
+                <div style="display:flex; gap:10px; position:sticky; top:0; background:#fff; padding-bottom:15px; z-index:10; border-bottom:1px solid #e5e7eb; margin-bottom:15px;">
+                    <button onclick="printImagesOnly('${oId}')" style="background:#059669; color:white; border:none; padding:10px; font-size:1.1rem; font-weight:bold; cursor:pointer; border-radius:5px; flex:1; margin:0;">🖨️ طباعة المخططات</button>
+                    <button onclick="closeModal()" style="background:#ef4444; color:white; border:none; padding:10px; font-size:1.1rem; font-weight:bold; cursor:pointer; border-radius:5px; flex:1; margin:0;">إغلاق ❌</button>
+                </div>
+            `;
+            let imgs = o.images.map(img => `<img src="${img}" style="width:100%; border-radius:5px; margin-bottom:10px; border:1px solid #ccc;">`).join(''); 
+            document.getElementById('modal-images-container').innerHTML = buttons + imgs; 
+            document.getElementById('image-modal').style.display='flex'; 
+        }
+
+        function closeModal() { document.getElementById('image-modal').style.display='none'; }
+
+        function executeBrowserSearch() {
+            let sOid = document.getElementById('browser-oid').value.trim();
+            let sCname = document.getElementById('browser-cname').value.toLowerCase().trim();
+            let sLen = document.getElementById('browser-length').value.trim();
+            let sWid = document.getElementById('browser-width').value.trim();
+            let sThick = document.getElementById('browser-thick').value.trim();
+            let container = document.getElementById('browser-container');
+
+            if (!sOid && !sCname && !sLen && !sWid && !sThick) {
+                alert("الرجاء إدخال بيانات في حقل واحد على الأقل للبحث!");
+                return;
+            }
+
+            let results = db.orders.filter(o => {
+                let cName = (db.customers.find(c => c.id === o.cid) || {}).name || '';
+                
+                let matchOid = sOid ? o.id.toString() === sOid : true;
+                let matchCname = sCname ? cName.toLowerCase().includes(sCname) : true;
+
+                let matchThick = true;
+                if (sThick) {
+                    let thick1 = o.rawSpecs ? (o.rawSpecs.thick1 || '') : '';
+                    let thick2 = o.rawSpecs ? (o.rawSpecs.thick2 || '') : '';
+                    matchThick = (thick1.toString() === sThick || thick2.toString() === sThick);
+                }
+
+                let matchPiece = true;
+                let matchedPieceIndices = [];
+
+                if (sLen || sWid) {
+                    let found = false;
+                    o.pieces.forEach((p, idx) => {
+                        let lMatch = sLen ? parseFloat(p.len) === parseFloat(sLen) : true;
+                        let wMatch = sWid ? parseFloat(p.wid) === parseFloat(sWid) : true;
+                        
+                        let lMatchSwap = sLen ? parseFloat(p.wid) === parseFloat(sLen) : true;
+                        let wMatchSwap = sWid ? parseFloat(p.len) === parseFloat(sWid) : true;
+
+                        if ((lMatch && wMatch) || (lMatchSwap && wMatchSwap)) {
+                            found = true;
+                            matchedPieceIndices.push(idx);
+                        }
+                    });
+                    matchPiece = found;
+                    o._tempMatchedPieces = matchedPieceIndices;
+                } else {
+                    o._tempMatchedPieces = [];
+                }
+
+                return matchOid && matchCname && matchThick && matchPiece;
+            });
+
+            if (results.length > 0) {
+                container.innerHTML = results.map((o, i) => generateOrderHTML(o, i, o.isArchived, true, o._tempMatchedPieces)).join('');
+            } else {
+                container.innerHTML = `
+                    <div style="text-align:center; padding:30px; background:#fee2e2; border-radius:8px; border:2px dashed #fca5a5;">
+                        <span style="font-size:2rem;">❌</span>
+                        <p style="color:#ef4444; font-weight:bold; font-size:1.1rem; margin-top:10px;">لم يتم العثور على أي طلب يطابق بحثك!</p>
+                    </div>`;
+            }
+
+            document.getElementById('browser-search-box').style.display = 'none';
+            document.getElementById('btn-new-search').classList.remove('hidden');
+        }
+
+        function resetBrowser() {
+            document.getElementById('browser-oid').value = '';
+            document.getElementById('browser-cname').value = '';
+            document.getElementById('browser-length').value = '';
+            document.getElementById('browser-width').value = '';
+            document.getElementById('browser-thick').value = '';
+            
+            document.getElementById('browser-search-box').style.display = 'block';
+            document.getElementById('btn-new-search').classList.add('hidden');
+            
+            document.getElementById('browser-container').innerHTML = `
+                <div style="text-align:center; padding:30px; background:#f3f4f6; border-radius:8px; border:2px dashed #d1d5db;">
+                    <span style="font-size:2rem;">⌨️</span>
+                    <p style="color:#6b7280; font-weight:bold; font-size:1.1rem; margin-top:10px;">أدخل معايير البحث واضغط على الزر في الأعلى...</p>
+                </div>`;
+        }
+
+        function renderProductionTable() { 
+            let searchInput = document.getElementById('search-prod');
+            let searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            let filteredOrders = db.orders.filter(o => !o.isArchived);
+            if(searchTerm) {
+                filteredOrders = filteredOrders.filter(o => {
+                    let cName = (db.customers.find(c => c.id === o.cid) || {}).name || '';
+                    return o.id.toString().includes(searchTerm) || cName.toLowerCase().includes(searchTerm);
+                });
+            }
+            document.getElementById('production-container').innerHTML = filteredOrders.map((o, i) => generateOrderHTML(o, i, false, false)).join('') || '<p style="text-align:center; font-weight:bold; margin-top:20px;">لا توجد طلبات تطابق بحثك حالياً.</p>'; 
+        }
+
+        function renderCompletedTable() { 
+            let searchInput = document.getElementById('search-comp');
+            let searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            let filteredOrders = db.orders.filter(o => o.isArchived);
+            if(searchTerm) {
+                filteredOrders = filteredOrders.filter(o => {
+                    let cName = (db.customers.find(c => c.id === o.cid) || {}).name || '';
+                    return o.id.toString().includes(searchTerm) || cName.toLowerCase().includes(searchTerm);
+                });
+            }
+            document.getElementById('completed-container').innerHTML = filteredOrders.map((o, i) => generateOrderHTML(o, i, true, false)).join('') || '<p style="text-align:center; font-weight:bold; margin-top:20px;">لا يوجد طلبات مطابقة في الأرشيف.</p>'; 
+        }
+        
+        function renderMyOrdersTable() { 
+            let myOrders = db.orders.filter(o => o.creatorId === currentUser.id);
+            document.getElementById('my-orders-container').innerHTML = myOrders.map((o, i) => generateOrderHTML(o, i, o.isArchived, false)).join('') || '<p style="text-align:center; font-weight:bold; margin-top:20px;">لم تقم بتنظيم أي طلبات بعد.</p>'; 
+        }
+
+        function generateOrderHTML(order, oIndex, isCompleted, isReadOnly = false, highlightedPieces = []) {
+            let cName = (db.customers.find(c => c.id === order.cid) || {}).name || '';
+            let allDone = order.pieces.every(p => p.isDone || p.isBroken);
+            let totalOrderQty = 0; let totalOrderArea = 0;
+
+            let pRows = order.pieces.map((p, pIndex) => {
+                if (highlightedPieces && highlightedPieces.length > 0 && !highlightedPieces.includes(pIndex)) {
+                    return ''; 
+                }
+
+                totalOrderQty += p.qty; 
+                totalOrderArea += p.area;
+                
+                let req = p.requiredStages || ['قص'];
+                let comp = p.completedStages || (p.isDone ? req : []);
+                p.requiredStages = req; p.completedStages = comp; 
+                
+                let stagesHTML = req.map(stage => {
+                    let isCompletedStage = comp.includes(stage);
+                    let cls = isCompletedStage ? 'stage-done' : 'stage-pending';
+                    let icon = isCompletedStage ? '✔️' : '⏳';
+                    
+                    let clickAct = (isCompleted || isReadOnly) ? '' : `onclick="toggleStage('${order.id}', ${pIndex}, '${stage}')" class="stage-clickable stage-badge ${cls}"`;
+                    let normAct = `class="stage-badge ${cls}"`;
+                    
+                    let workerInfo = '';
+                    if(isCompletedStage && p.stageDetails && p.stageDetails[stage]) {
+                        workerInfo = `<div style="font-size:0.75rem; margin-top:2px; font-weight:normal;">👤 ${p.stageDetails[stage].by.split(' ')[0]}</div>`;
+                    }
+                    
+                    return `<div ${(isCompleted || isReadOnly) ? normAct : clickAct} style="flex-direction:column; padding:5px;">
+                                <div>${icon} ${stage}</div>
+                                ${workerInfo}
+                            </div>`;
+                }).join('');
+
+                let isHighlighted = highlightedPieces && highlightedPieces.includes(pIndex);
+                let highlightStyle = isHighlighted ? 'border: 3px solid #8b5cf6; background: #ede9fe; box-shadow: 0 0 10px rgba(139,92,246,0.3); transform: scale(1.01);' : '';
+
+                return `<div class="piece-card ${p.isDone ? 'piece-done' : ''}" style="${highlightStyle}">
+                    <div class="piece-header">
+                        <div><span class="piece-number">${pIndex + 1}</span> <span class="piece-dims">${p.len} × ${p.wid}</span></div>
+                        <div class="piece-qty">${p.qty} قطع</div>
+                    </div>
+                    <div class="piece-details">
+                        <b style="color:#047857;">الإضافات:</b> ${p.servicesTxt||'لا يوجد'} <br>
+                        <span style="color:#d97706;"><b>ملاحظات:</b> ${p.notes || '-'}</span>
+                    </div>
+                    <div class="stages-container">
+                        ${stagesHTML}
+                    </div>
+                </div>`;
+            }).join('');
+            
+            let topActions = '';
+            
+            if (isReadOnly) {
+                let statusText = order.isArchived ? "📦 طلب مُسلّم مؤرشف" : (order.isReady ? "📦 جاهز للتسليم للزبون" : "⏳ قيد العمل بالورشة");
+                let bgColors = order.isArchived ? "background:#4b5563; color:white;" : (order.isReady ? "background:#059669; color:white;" : "background:#f59e0b; color:white;");
+                topActions = `<div style="${bgColors} padding:8px 15px; border-radius:5px; text-align:center; font-weight:bold; margin-bottom:10px; border:2px dashed #fff;">🔍 وضع العرض فقط — ${statusText}</div>`;
+            } 
+            else if (!isCompleted) { 
+                if (!order.isReady) {
+                    if (allDone && order.pieces.length > 0) {
+                        topActions = `<button class="btn-archive" style="background:#059669; padding:8px 15px; width:100%; margin-bottom:10px;" onclick="markOrderReady('${order.id}')">✔️ تعيين كطلب جاهز بالكامل</button>`;
+                    } else {
+                        topActions = `<div style="background:#9ca3af; color:white; padding:8px 15px; border-radius:5px; text-align:center; font-weight:bold; margin-bottom:10px;">⏳ قيد العمل بالورشة</div>`;
+                    }
+                } else {
+                    topActions = `<button class="btn-archive" style="background:#2563eb; padding:8px 15px; width:100%; margin-bottom:10px;" onclick="markOrderDelivered('${order.id}')">📦 تم التسليم للزبون (نقل للأرشيف)</button>`;
+                }
+            } else { 
+                topActions = `<div style="background:#4b5563; color:white; padding:8px 15px; border-radius:5px; text-align:center; font-weight:bold; margin-bottom:10px;">📦 طلب مُسلّم مؤرشف</div>`;
+            }
+
+            let editBtnHTML = '';
+            if(!isCompleted && !isReadOnly && order.creatorId === currentUser.id) {
+                editBtnHTML = `<button onclick="editOrder('${order.id}')" class="btn-print" style="background:#d97706;">✏️ تعديل الطلب</button>`;
+            }
+
+            let hiddenNotice = '';
+            if (isReadOnly && highlightedPieces && highlightedPieces.length > 0 && highlightedPieces.length < order.pieces.length) {
+                hiddenNotice = `<div style="background:#fefce8; color:#a16207; padding:8px; border:1px dashed #eab308; border-radius:4px; text-align:center; font-weight:bold; margin-bottom:10px;">🔍 تم فلترة القطع وعرض المطابقة لبحثك فقط (توجد قطع أخرى مخفية).</div>`;
+            }
+
+            let qtyLabel = (highlightedPieces && highlightedPieces.length > 0) ? 'إجمالي القطع المعروضة:' : 'إجمالي عدد القطع:';
+            let areaLabel = (highlightedPieces && highlightedPieces.length > 0) ? 'مساحة القطع المعروضة:' : 'إجمالي الأمتار المربعة:';
+
+            return `<div class="admin-order-card" style="${isCompleted ? 'border-color:#4b5563;' : (order.isReady ? 'border-color:#059669; background:#f0fdf4;' : '')}">
+                
+                <div class="order-header" style="background:${isCompleted ? '#e5e7eb' : (order.isReady ? '#d1fae5' : '#e0f2fe')};">
+                    ${topActions}
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <h3 style="margin:0; color:#1e3a8a; font-size:1.2rem;">الطلب: <span class="badge-order-id">${order.id}</span> <br> <span style="color:#4b5563; font-size:1.1rem; margin-top:5px; display:inline-block;">👤 ${cName}</span></h3>
+                        <div style="display:flex; gap:5px; flex-wrap:wrap;">
+                            <button onclick="openFixedPreview('${order.id}')" class="btn-print" style="background:#0284c7;">👁️ معاينة شاملة للطلب</button>
+                            <button onclick="openProductionReport('${order.id}')" class="btn-print" style="background:#8b5cf6;">📊 تقرير تتبع الإنتاج</button>
+                            ${editBtnHTML}
+                            ${order.images && order.images.length > 0 ? `<button onclick="openModal('${order.id}')" class="btn-blueprint">📎 المخططات</button>` : ''}
+                        </div>
+                    </div>
+                    <div style="margin-top:10px;">
+                        <span class="creator-badge">📝 نظم الطلب: ${order.creatorName || 'غير معروف'}</span>
+                    </div>
+                </div>
+
+                <div class="order-glass-spec">
+                    <div>🔍 ${order.glassSpec || 'غير محدد'}</div>
+                    <div style="font-size:0.9rem; margin-top:5px; color:#047857;">🏢 نظام الذكاء الآلي يتكفل بتوزيع القطع للأقسام</div>
+                </div>
+
+                <div style="padding-top:5px;">
+                    ${hiddenNotice}
+                    ${pRows}
+                </div>
+                
+                <div class="order-footer">
+                    <div>${qtyLabel} <span style="color:red; direction:ltr; display:inline-block;">${totalOrderQty}</span></div>
+                    <div>${areaLabel} <span style="color:red; direction:ltr; display:inline-block;">${totalOrderArea.toFixed(2)} م²</span></div>
+                </div>
+            </div>`;
+        }
+
+        function addEmployee() { let n = document.getElementById('emp-name').value; let r = document.getElementById('emp-role').value; let p = document.getElementById('emp-pass').value; if(!n || !p) return alert("أكمل البيانات"); db.employees.push({ id: Date.now().toString(), name:n, role:r, pass:p }); saveDB(); renderEmployees(); }
+        function renderEmployees() { document.getElementById('employees-list-container').innerHTML = db.employees.map((e, i) => `<div class="emp-card"><div style="flex:1;"><b>${e.name}</b> (اختصاص: ${e.role}) | رمز الدخول: <span style="direction:ltr; display:inline-block;">${e.pass}</span></div><button style="background:red; color:white; border:none; width:auto; padding:8px 12px; border-radius:4px;" onclick="db.employees.splice(${i},1); saveDB(); renderEmployees();">حذف</button></div>`).join(''); }
+
+        initApp();
+        updateDropdowns(); 
+        document.getElementById('order-date').value = todayDateStr;
+    </script>
+</body>
+</html>
